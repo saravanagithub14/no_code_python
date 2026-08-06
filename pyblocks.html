@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyBlocks — Learn Python by Snapping Blocks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg-workspace: #232338;
+    --bg-workspace-2: #1b1b2c;
+    --panel: #2c2c46;
+    --panel-light: #34345066;
+    --ink: #f3f1ff;
+    --ink-dim: #b8b4d6;
+    --line: #3f3f5c;
+    --accent-yellow: #ffce54;
+
+    --cat-events:  #ff8a5c;
+    --cat-events-d:#e06a3c;
+    --cat-loops:   #ffb347;
+    --cat-loops-d: #db8f27;
+    --cat-logic:   #b088ff;
+    --cat-logic-d: #8f5fe8;
+    --cat-math:    #4fd6a8;
+    --cat-math-d:  #2fb389;
+    --cat-vars:    #ff6fa5;
+    --cat-vars-d:  #e04a86;
+    --cat-output:  #4fa8ff;
+    --cat-output-d:#2f83e0;
+
+    --code-bg: #14141f;
+    --code-line: #23233a;
+
+    --radius: 14px;
+    --font-display: 'Baloo 2', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family: var(--font-display);
+    background: var(--bg-workspace-2);
+    color: var(--ink);
+    overflow:hidden;
+  }
+
+  /* ============ TOP BAR ============ */
+  .topbar{
+    height:64px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px;
+    background: linear-gradient(180deg, #2a2a42, #24243a);
+    border-bottom: 3px solid #14141f;
+    position:relative;
+    z-index:20;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-weight:800; font-size:22px; letter-spacing:0.3px;
+  }
+  .brand .logo{
+    width:36px; height:36px; border-radius:10px;
+    background: linear-gradient(135deg, var(--cat-output), var(--cat-loops));
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-mono); font-weight:700; font-size:16px;
+    color:#14141f;
+    transform: rotate(-6deg);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.25);
+  }
+  .brand .sub{
+    font-size:11px; font-weight:600; color:var(--ink-dim);
+    letter-spacing:1.5px; text-transform:uppercase;
+    margin-left:2px;
+  }
+  .topbar-actions{ display:flex; gap:10px; align-items:center; }
+  .btn{
+    font-family: var(--font-display);
+    font-weight:700; font-size:14px;
+    border:none; border-radius:10px;
+    padding:10px 18px;
+    cursor:pointer;
+    color:#14141f;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.28);
+    transition: transform .08s ease, box-shadow .08s ease;
+    display:flex; align-items:center; gap:7px;
+  }
+  .btn:active{ transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.28); }
+  .btn-run{ background: var(--cat-math); }
+  .btn-run:hover{ background:#63e6bb; }
+  .btn-clear{ background:#3f3f5c; color:var(--ink); }
+  .btn-clear:hover{ background:#4a4a6c; }
+  .btn-example{ background: var(--accent-yellow); }
+  .btn-example:hover{ background:#ffd97a; }
+
+  /* ============ MAIN LAYOUT ============ */
+  .app{
+    display:grid;
+    grid-template-columns: 250px 1fr 400px;
+    height: calc(100% - 64px);
+  }
+  @media (max-width: 1100px){
+    .app{ grid-template-columns: 210px 1fr 340px; }
+  }
+
+  /* ============ PALETTE ============ */
+  .palette{
+    background: var(--bg-workspace);
+    border-right: 3px solid #14141f;
+    overflow-y:auto;
+    padding: 14px 10px 40px;
+  }
+  .cat-group{ margin-bottom: 18px; }
+  .cat-title{
+    font-size:12px; font-weight:800; text-transform:uppercase;
+    letter-spacing:1px;
+    padding: 4px 8px 8px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .cat-dot{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+  .palette-block{
+    font-family: var(--font-mono);
+    font-size:13px;
+    font-weight:600;
+    color: #14141f;
+    padding: 9px 12px;
+    border-radius: 8px;
+    margin-bottom: 7px;
+    cursor: grab;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action: none;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.25);
+    display:flex; align-items:center; gap:6px;
+    line-height:1.3;
+    transition: transform 0.1s ease;
+  }
+  .palette-block:hover{ transform: translateX(2px) scale(1.02); }
+  .palette-block:active{ cursor:grabbing; }
+  .palette-block .ph{
+    background: rgba(20,20,31,0.18);
+    border-radius:4px;
+    padding: 1px 6px;
+    font-weight:700;
+  }
+
+  /* ============ CANVAS ============ */
+  .canvas-wrap{
+    position:relative;
+    overflow:auto;
+    background:
+      radial-gradient(circle, #2c2c46 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+    background-color: var(--bg-workspace);
+  }
+  .canvas{
+    min-height:100%;
+    min-width:100%;
+    position:relative;
+    padding: 24px;
+  }
+  .empty-hint{
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    color: var(--ink-dim);
+    pointer-events:none;
+    width:min(360px, 80vw);
+  }
+  .empty-hint .big{ font-size:19px; font-weight:800; color:#8d89b5; margin-bottom:8px;}
+  .empty-hint .arrow{ font-size:34px; margin-bottom:6px; }
+
+  .script-stack{
+    position:relative;
+    display:inline-flex;
+    flex-direction:column;
+    min-width:220px;
+  }
+
+  /* ============ BLOCKS ON CANVAS ============ */
+  .block{
+    font-family: var(--font-mono);
+    font-size:13.5px;
+    font-weight:600;
+    color:#14141f;
+    border-radius:8px;
+    padding: 10px 12px;
+    margin-bottom:3px;
+    cursor:grab;
+    position:relative;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.28);
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    min-width:180px;
+  }
+  .block.dragging{ opacity:0.35; }
+  .block{ user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+  .palette-block{ -webkit-touch-callout:none; }
+  .block-body{ display:flex; align-items:center; flex-wrap:wrap; gap:6px;}
+  .block .del{
+    margin-left:auto;
+    width:20px; height:20px;
+    border-radius:50%;
+    background:rgba(20,20,31,0.22);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:12px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .block .del:hover{ background:rgba(20,20,31,0.4); }
+
+  .block-input{
+    font-family: var(--font-mono);
+    font-weight:700;
+    border:none;
+    border-radius:5px;
+    padding: 3px 7px;
+    background: rgba(255,255,255,0.55);
+    color:#14141f;
+    min-width:36px;
+    max-width: 180px;
+  }
+  .block-input:focus{ outline: 2px solid #14141f; background:#fff; }
+  .block-select{
+    font-family: var(--font-mono);
+    font-weight:700;
+    border:none;
+    border-radius:5px;
+    padding: 3px 5px;
+    background: rgba(255,255,255,0.55);
+    color:#14141f;
+  }
+
+  .c-events{ background: var(--cat-events); }
+  .c-loops{ background: var(--cat-loops); }
+  .c-logic{ background: var(--cat-logic); }
+  .c-math{ background: var(--cat-math); }
+  .c-vars{ background: var(--cat-vars); }
+  .c-output{ background: var(--cat-output); }
+
+  /* nested body for loops/if */
+  .nest{
+    margin: 4px 0 4px 18px;
+    padding: 8px 0 8px 12px;
+    border-left: 4px dashed rgba(20,20,31,0.35);
+    min-height: 42px;
+    width: calc(100% - 18px);
+    display:flex;
+    flex-direction:column;
+  }
+  .nest-drop{
+    border-radius:8px;
+    min-height:38px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: rgba(20,20,31,0.55);
+    font-size:11px;
+    font-weight:700;
+    border: 2px dashed rgba(20,20,31,0.28);
+    padding: 8px;
+  }
+  .drop-indicator{
+    height:6px;
+    width:100%;
+    background: var(--accent-yellow);
+    border-radius:4px;
+    margin: 2px 0;
+  }
+
+  /* ============ CODE PANEL ============ */
+  .code-panel{
+    background: var(--code-bg);
+    border-left: 3px solid #14141f;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+  .code-header{
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--code-line);
+    display:flex; align-items:center; justify-content:space-between;
+    background: #191926;
+  }
+  .code-header .title{
+    font-weight:800; font-size:14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .dot-row{ display:flex; gap:5px; }
+  .dot-row span{ width:9px; height:9px; border-radius:50%; display:block;}
+  .dot-r{background:#ff6159;} .dot-y{background:#ffbd2e;} .dot-g{background:#28c840;}
+
+  .code-body{
+    flex:1;
+    overflow-y:auto;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size:13.5px;
+    line-height:1.65;
+    white-space:pre;
+    counter-reset: line;
+  }
+  .code-line{
+    display:flex;
+    min-height:1.65em;
+    border-radius:4px;
+    padding: 0 4px;
+    transition: background .3s ease;
+  }
+  .code-line.flash{ background: rgba(255,206,84,0.22); }
+  .code-line .ln{
+    color:#4a4a68; width:26px; flex-shrink:0; user-select:none; text-align:right; margin-right:12px;
+  }
+  .code-line .content{ white-space:pre; }
+  .kw{ color:#c792ea; } .fn{ color:#82aaff; } .str{ color:#c3e88d; } .num{ color:#f78c6c; } .cm{ color:#5c6370; font-style:italic;} .vn{ color:#ffcb6b; }
+
+  .console{
+    border-top: 2px solid var(--code-line);
+    background:#0e0e18;
+    max-height: 40%;
+    min-height:120px;
+    display:flex; flex-direction:column;
+  }
+  .console-header{
+    padding:10px 16px 6px;
+    font-size:12px; font-weight:800; text-transform:uppercase;
+    letter-spacing:1px; color:var(--ink-dim);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .console-header .clear-console{
+    cursor:pointer; color:#6e6a94; font-weight:700; font-size:11px;
+  }
+  .console-header .clear-console:hover{ color:var(--ink); }
+  .console-body{
+    flex:1; overflow-y:auto;
+    padding: 4px 16px 14px;
+    font-family: var(--font-mono);
+    font-size:13px;
+    color:#a8e6c1;
+    line-height:1.6;
+  }
+  .console-body .err{ color:#ff8a8a; }
+  .console-body .hint{ color:#6e6a94; font-style:italic; }
+
+  /* ============ SCROLLBARS ============ */
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:#3f3f5c; border-radius:6px; }
+  ::-webkit-scrollbar-thumb:hover{ background:#4f4f70; }
+
+  .drag-ghost{
+    position: fixed;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0.9;
+    transform: rotate(-2deg) scale(1.03);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.45) !important;
+    margin: 0 !important;
+  }
+  .zone-active.drop-indicator{
+    background: var(--accent-yellow) !important;
+    height: 14px !important;
+    opacity: 1 !important;
+  }
+  .zone-active.nest-drop{
+    background: rgba(255,206,84,0.18) !important;
+    border-color: var(--accent-yellow) !important;
+    color: var(--accent-yellow) !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">&gt;_</div>
+    <div>PyBlocks
+      <div class="sub">snap blocks, learn python</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-example" id="loadExampleBtn">✨ Try an Example</button>
+    <button class="btn btn-clear" id="clearBtn">🗑 Clear</button>
+    <button class="btn btn-run" id="runBtn">▶ Run</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- PALETTE -->
+  <div class="palette" id="palette">
+
+    <div class="cat-group">
+      <div class="cat-title" style="color:var(--cat-output)"><span class="cat-dot" style="background:var(--cat-output)"></span>Output</div>
+      <div class="palette-block c-output" data-type="print">say <span class="ph">"Hello!"</span></div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title" style="color:var(--cat-vars)"><span class="cat-dot" style="background:var(--cat-vars)"></span>Variables</div>
+      <div class="palette-block c-vars" data-type="setvar">set <span class="ph">x</span> to <span class="ph">0</span></div>
+      <div class="palette-block c-vars" data-type="changevar">change <span class="ph">x</span> by <span class="ph">1</span></div>
+      <div class="palette-block c-vars" data-type="askvar">ask <span class="ph">"name?"</span> → <span class="ph">x</span></div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title" style="color:var(--cat-loops)"><span class="cat-dot" style="background:var(--cat-loops)"></span>Loops</div>
+      <div class="palette-block c-loops" data-type="repeat">repeat <span class="ph">10</span> times</div>
+      <div class="palette-block c-loops" data-type="while">repeat until <span class="ph">x &gt; 10</span></div>
+      <div class="palette-block c-loops" data-type="foreach">for each item in <span class="ph">list</span></div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title" style="color:var(--cat-logic)"><span class="cat-dot" style="background:var(--cat-logic)"></span>Logic</div>
+      <div class="palette-block c-logic" data-type="if">if <span class="ph">x &gt; 0</span> then</div>
+      <div class="palette-block c-logic" data-type="ifelse">if <span class="ph">x &gt; 0</span> else</div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title" style="color:var(--cat-math)"><span class="cat-dot" style="background:var(--cat-math)"></span>Math</div>
+      <div class="palette-block c-math" data-type="mathop">set <span class="ph">x</span> to <span class="ph">x</span> <span class="ph">+</span> <span class="ph">1</span></div>
+      <div class="palette-block c-math" data-type="random">set <span class="ph">x</span> to random <span class="ph">1</span>-<span class="ph">10</span></div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title" style="color:var(--cat-events)"><span class="cat-dot" style="background:var(--cat-events)"></span>Comments</div>
+      <div class="palette-block c-events" data-type="comment"># note: <span class="ph">explain here</span></div>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="canvas" id="canvas">
+      <div class="empty-hint" id="emptyHint">
+        <div class="arrow">⇠</div>
+        <div class="big">Drag blocks here to build your program</div>
+        <div>They'll snap together and turn into real Python on the right.</div>
+      </div>
+      <div class="script-stack" id="scriptStack"></div>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="code-panel">
+    <div class="code-header">
+      <div class="title"><span class="dot-row"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></span>&nbsp; program.py</div>
+    </div>
+    <div class="code-body" id="codeBody"></div>
+    <div class="console">
+      <div class="console-header">
+        <span>Console Output</span>
+        <span class="clear-console" id="clearConsole">clear</span>
+      </div>
+      <div class="console-body" id="consoleBody"><span class="hint">Click ▶ Run to execute your program here.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   DATA MODEL
+   Each block: { id, type, fields:{...}, children:[] (for containers) }
+   Top level program = array of block objects (a "script-stack")
+====================================================================== */
+
+let idCounter = 1;
+function newId(){ return 'b' + (idCounter++); }
+
+let program = []; // array of top-level block objects
+
+const BLOCK_META = {
+  print:      { cls:'c-output', container:false },
+  setvar:     { cls:'c-vars',   container:false },
+  changevar:  { cls:'c-vars',   container:false },
+  askvar:     { cls:'c-vars',   container:false },
+  repeat:     { cls:'c-loops',  container:true  },
+  while:      { cls:'c-loops',  container:true  },
+  foreach:    { cls:'c-loops',  container:true  },
+  if:         { cls:'c-logic',  container:true  },
+  ifelse:     { cls:'c-logic',  container:'double' },
+  mathop:     { cls:'c-math',   container:false },
+  random:     { cls:'c-math',   container:false },
+  comment:    { cls:'c-events', container:false },
+};
+
+function defaultFields(type){
+  switch(type){
+    case 'print': return { value: '"Hello!"' };
+    case 'setvar': return { name:'x', value:'0' };
+    case 'changevar': return { name:'x', value:'1' };
+    case 'askvar': return { prompt:'"What is your name?"', name:'x' };
+    case 'repeat': return { count:'10' };
+    case 'while': return { cond:'x > 10' };
+    case 'foreach': return { item:'item', list:'[1, 2, 3]' };
+    case 'if': return { cond:'x > 0' };
+    case 'ifelse': return { cond:'x > 0' };
+    case 'mathop': return { name:'x', a:'x', op:'+', b:'1' };
+    case 'random': return { name:'x', lo:'1', hi:'10' };
+    case 'comment': return { text:'explain here' };
+    default: return {};
+  }
+}
+
+function makeBlock(type){
+  const meta = BLOCK_META[type];
+  const b = { id:newId(), type, fields: defaultFields(type) };
+  if(meta.container === true) b.children = [];
+  if(meta.container === 'double'){ b.children = []; b.children2 = []; }
+  return b;
+}
+
+/* ======================================================================
+   RENDERING BLOCKS (as DOM + drag targets)
+====================================================================== */
+
+const scriptStackEl = document.getElementById('scriptStack');
+const emptyHint = document.getElementById('emptyHint');
+
+function renderProgram(){
+  scriptStackEl.innerHTML = '';
+  emptyHint.style.display = program.length ? 'none' : 'block';
+  program.forEach((block, idx) => {
+    scriptStackEl.appendChild(renderBlock(block, program, idx));
+  });
+  // trailing drop zone at end of top-level stack
+  scriptStackEl.appendChild(makeStackDropZone(program, program.length));
+  renderCode();
+}
+
+function fieldInput(block, key, {width}={}){
+  const inp = document.createElement('input');
+  inp.className = 'block-input';
+  inp.value = block.fields[key];
+  if(width) inp.style.width = width;
+  inp.addEventListener('click', e => e.stopPropagation());
+  inp.addEventListener('mousedown', e => e.stopPropagation());
+  inp.addEventListener('dragstart', e => e.preventDefault());
+  inp.addEventListener('input', () => { block.fields[key] = inp.value; renderCode(); });
+  autosizeInput(inp);
+  inp.addEventListener('input', () => autosizeInput(inp));
+  return inp;
+}
+function autosizeInput(inp){
+  inp.style.width = Math.max(28, inp.value.length * 8 + 14) + 'px';
+}
+
+function fieldSelect(block, key, options){
+  const sel = document.createElement('select');
+  sel.className = 'block-select';
+  options.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    if(block.fields[key] === o) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('click', e => e.stopPropagation());
+  sel.addEventListener('mousedown', e => e.stopPropagation());
+  sel.addEventListener('change', () => { block.fields[key] = sel.value; renderCode(); });
+  return sel;
+}
+
+function label(text){
+  const span = document.createElement('span');
+  span.textContent = text;
+  return span;
+}
+
+function renderBlock(block, parentArray, indexInParent){
+  const meta = BLOCK_META[block.type];
+  const wrap = document.createElement('div');
+  wrap.className = 'block ' + meta.cls;
+  wrap.style.touchAction = 'none';
+  wrap.dataset.id = block.id;
+
+  const body = document.createElement('div');
+  body.className = 'block-body';
+
+  switch(block.type){
+    case 'print':
+      body.appendChild(label('say')); body.appendChild(fieldInput(block,'value',{width:'110px'}));
+      break;
+    case 'setvar':
+      body.appendChild(label('set')); body.appendChild(fieldInput(block,'name',{width:'40px'}));
+      body.appendChild(label('to')); body.appendChild(fieldInput(block,'value',{width:'60px'}));
+      break;
+    case 'changevar':
+      body.appendChild(label('change')); body.appendChild(fieldInput(block,'name',{width:'40px'}));
+      body.appendChild(label('by')); body.appendChild(fieldInput(block,'value',{width:'50px'}));
+      break;
+    case 'askvar':
+      body.appendChild(label('ask')); body.appendChild(fieldInput(block,'prompt',{width:'130px'}));
+      body.appendChild(label('→ store in')); body.appendChild(fieldInput(block,'name',{width:'40px'}));
+      break;
+    case 'repeat':
+      body.appendChild(label('repeat')); body.appendChild(fieldInput(block,'count',{width:'40px'}));
+      body.appendChild(label('times'));
+      break;
+    case 'while':
+      body.appendChild(label('repeat until')); body.appendChild(fieldInput(block,'cond',{width:'100px'}));
+      break;
+    case 'foreach':
+      body.appendChild(label('for each')); body.appendChild(fieldInput(block,'item',{width:'50px'}));
+      body.appendChild(label('in')); body.appendChild(fieldInput(block,'list',{width:'60px'}));
+      break;
+    case 'if':
+      body.appendChild(label('if')); body.appendChild(fieldInput(block,'cond',{width:'100px'}));
+      body.appendChild(label('then'));
+      break;
+    case 'ifelse':
+      body.appendChild(label('if')); body.appendChild(fieldInput(block,'cond',{width:'100px'}));
+      body.appendChild(label('then / else'));
+      break;
+    case 'mathop':
+      body.appendChild(label('set')); body.appendChild(fieldInput(block,'name',{width:'40px'}));
+      body.appendChild(label('to')); body.appendChild(fieldInput(block,'a',{width:'40px'}));
+      body.appendChild(fieldSelect(block,'op',['+','-','*','/','%']));
+      body.appendChild(fieldInput(block,'b',{width:'40px'}));
+      break;
+    case 'random':
+      body.appendChild(label('set')); body.appendChild(fieldInput(block,'name',{width:'40px'}));
+      body.appendChild(label('to random')); body.appendChild(fieldInput(block,'lo',{width:'34px'}));
+      body.appendChild(label('-')); body.appendChild(fieldInput(block,'hi',{width:'34px'}));
+      break;
+    case 'comment':
+      body.appendChild(label('#')); body.appendChild(fieldInput(block,'text',{width:'160px'}));
+      break;
+  }
+
+  const del = document.createElement('div');
+  del.className = 'del';
+  del.textContent = '×';
+  del.title = 'Delete block';
+  del.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeBlockById(program, block.id);
+    renderProgram();
+  });
+
+  wrap.appendChild(body);
+  wrap.appendChild(del);
+
+  // container children
+  if(meta.container === true){
+    wrap.appendChild(renderContainer(block, 'children'));
+  } else if(meta.container === 'double'){
+    const thenLbl = document.createElement('div');
+    thenLbl.style.cssText = 'width:100%;font-size:10px;font-weight:800;opacity:0.65;margin:2px 0 -2px 4px;';
+    thenLbl.textContent = 'THEN';
+    wrap.appendChild(thenLbl);
+    wrap.appendChild(renderContainer(block, 'children'));
+    const elseLbl = document.createElement('div');
+    elseLbl.style.cssText = 'width:100%;font-size:10px;font-weight:800;opacity:0.65;margin:2px 0 -2px 4px;';
+    elseLbl.textContent = 'ELSE';
+    wrap.appendChild(elseLbl);
+    wrap.appendChild(renderContainer(block, 'children2'));
+  }
+
+  // drag start (pointer-based, works for mouse + touch + pen)
+  wrap.addEventListener('pointerdown', (e) => startDrag(e, wrap, { existingBlockId: block.id }));
+
+  return wrap;
+}
+
+function renderContainer(block, key){
+  const nest = document.createElement('div');
+  nest.className = 'nest';
+  const arr = block[key];
+  if(arr.length === 0){
+    nest.appendChild(makeStackDropZone(arr, 0, true));
+  } else {
+    arr.forEach((child, i) => {
+      nest.appendChild(renderBlock(child, arr, i));
+    });
+    nest.appendChild(makeStackDropZone(arr, arr.length));
+  }
+  return nest;
+}
+
+/* Drop zone: a thin area between blocks (or empty container) that accepts drags.
+   With pointer-based dragging, these zones don't listen for native dnd events —
+   instead the active drag loop finds the nearest zone via elementFromPoint / bounding rects. */
+function makeStackDropZone(targetArray, index, isEmptyPlaceholder){
+  const zone = document.createElement('div');
+  zone.className = isEmptyPlaceholder ? 'nest-drop' : 'drop-indicator';
+  zone.dataset.dropZone = '1';
+  zone.__targetArray = targetArray;
+  zone.__index = index;
+  if(isEmptyPlaceholder){
+    zone.textContent = 'drop blocks inside';
+    zone.style.opacity = '0.7';
+  } else {
+    zone.style.opacity = '0';
+    zone.style.height = '8px';
+  }
+  return zone;
+}
+
+function clearDropIndicators(){
+  document.querySelectorAll('.drop-indicator').forEach(z => { z.style.opacity='0'; z.style.height='8px'; });
+  document.querySelectorAll('.nest-drop').forEach(z => { z.style.opacity='0.7'; z.classList.remove('zone-active'); });
+  document.querySelectorAll('.zone-active').forEach(z => z.classList.remove('zone-active'));
+}
+
+/* ======================================================================
+   POINTER-BASED DRAG & DROP (works for mouse, touch, and pen — including iOS)
+====================================================================== */
+let activeDrag = null; // { ghost, existingBlockId, paletteType, pointerId, lastZone }
+
+function startDrag(e, sourceEl, opts){
+  // Ignore drags that start on interactive form controls (inputs/selects) so typing still works
+  if(e.target.closest('input, select, .del')) return;
+  e.preventDefault();
+
+  const rect = sourceEl.getBoundingClientRect();
+  const ghost = sourceEl.cloneNode(true);
+  ghost.classList.add('drag-ghost');
+  ghost.style.width = rect.width + 'px';
+  // strip nested delete buttons / inputs interactivity from the ghost preview
+  ghost.querySelectorAll('input, select').forEach(el => el.disabled = true);
+  document.body.appendChild(ghost);
+
+  activeDrag = {
+    ghost,
+    pointerId: e.pointerId,
+    existingBlockId: opts.existingBlockId || null,
+    paletteType: opts.paletteType || null,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    lastZone: null,
+  };
+
+  if(opts.existingBlockId){
+    sourceEl.classList.add('dragging');
+  }
+
+  positionGhost(e.clientX, e.clientY);
+  activeDrag.lastZone = findNearestZone(e.clientX, e.clientY);
+  if(activeDrag.lastZone){
+    activeDrag.lastZone.classList.add('zone-active');
+    if(activeDrag.lastZone.classList.contains('nest-drop')){ activeDrag.lastZone.style.opacity = '1'; }
+    else { activeDrag.lastZone.style.opacity = '1'; activeDrag.lastZone.style.height = '12px'; }
+  }
+
+  window.addEventListener('pointermove', onDragMove);
+  window.addEventListener('pointerup', onDragEnd);
+  window.addEventListener('pointercancel', onDragEnd);
+}
+
+function positionGhost(x, y){
+  if(!activeDrag) return;
+  activeDrag.ghost.style.left = (x - activeDrag.offsetX) + 'px';
+  activeDrag.ghost.style.top = (y - activeDrag.offsetY) + 'px';
+}
+
+function onDragMove(e){
+  if(!activeDrag || e.pointerId !== activeDrag.pointerId) return;
+  positionGhost(e.clientX, e.clientY);
+
+  const zone = findNearestZone(e.clientX, e.clientY);
+  if(zone !== activeDrag.lastZone){
+    clearDropIndicators();
+    if(zone){
+      zone.classList.add('zone-active');
+      if(zone.classList.contains('nest-drop')){ zone.style.opacity = '1'; }
+      else { zone.style.opacity = '1'; zone.style.height = '12px'; }
+    }
+    activeDrag.lastZone = zone;
+  }
+}
+
+function findNearestZone(x, y){
+  const canvasWrap = document.getElementById('canvasWrap');
+  const cRect = canvasWrap.getBoundingClientRect();
+  if(x < cRect.left || x > cRect.right || y < cRect.top || y > cRect.bottom) return null;
+
+  // Nearest-zone distance search — more forgiving than requiring a pixel-perfect
+  // hit on a thin 6px indicator strip.
+  const zones = Array.from(document.querySelectorAll('[data-drop-zone]'));
+  let best = null, bestDist = Infinity;
+  for(const z of zones){
+    const r = z.getBoundingClientRect();
+    if(r.width === 0 && r.height === 0) continue; // not laid out / hidden
+    const withinBand = y >= r.top - 70 && y <= r.bottom + 70;
+    if(!withinBand) continue;
+    const cy = r.top + r.height/2;
+    const cx = Math.min(Math.max(x, r.left), r.right); // horizontal distance only matters outside the zone's own width
+    const dist = Math.abs(cy - y) + Math.abs(cx - x) * 0.02;
+    if(dist < bestDist){ bestDist = dist; best = z; }
+  }
+  if(best) return best;
+
+  // Nothing in range (e.g. pointer is over empty canvas space far below the
+  // last block) — fall back to the top-level trailing zone so a drop anywhere
+  // in the open canvas still appends to the end of the program.
+  const stack = document.getElementById('scriptStack');
+  const trailing = stack.querySelector(':scope > [data-drop-zone]:last-child');
+  return trailing || null;
+}
+
+function onDragEnd(e){
+  if(!activeDrag || e.pointerId !== activeDrag.pointerId) return;
+  window.removeEventListener('pointermove', onDragMove);
+  window.removeEventListener('pointerup', onDragEnd);
+  window.removeEventListener('pointercancel', onDragEnd);
+
+  const zone = activeDrag.lastZone;
+  const existingBlockId = activeDrag.existingBlockId;
+  const paletteType = activeDrag.paletteType;
+
+  activeDrag.ghost.remove();
+  clearDropIndicators();
+  document.querySelectorAll('.block.dragging').forEach(el => el.classList.remove('dragging'));
+  activeDrag = null;
+
+  if(zone){
+    handleDrop(zone.__targetArray, zone.__index, { existingBlockId, paletteType });
+  }
+}
+
+// palette blocks: start a "copy" drag that creates a new block on drop
+document.querySelectorAll('.palette-block').forEach(el => {
+  el.addEventListener('pointerdown', (e) => startDrag(e, el, { paletteType: el.dataset.type }));
+});
+
+function handleDrop(targetArray, index, opts){
+  if(opts.paletteType){
+    const block = makeBlock(opts.paletteType);
+    targetArray.splice(index, 0, block);
+  } else if(opts.existingBlockId){
+    // If the block being moved lives in the SAME array as the drop target,
+    // removing it first shifts every index after it — so adjust the target
+    // index down by one when the origin position was before the drop index.
+    const originIndex = targetArray.findIndex(b => b.id === opts.existingBlockId);
+    const moved = removeBlockById(program, opts.existingBlockId);
+    if(moved){
+      let insertAt = index;
+      if(originIndex !== -1 && originIndex < index){
+        insertAt = index - 1;
+      }
+      targetArray.splice(insertAt, 0, moved);
+    }
+  }
+  renderProgram();
+}
+
+/* Recursively search & remove a block by id from nested structure. Returns removed block or null. */
+function removeBlockById(arr, id){
+  for(let i=0;i<arr.length;i++){
+    if(arr[i].id === id){
+      return arr.splice(i,1)[0];
+    }
+    const b = arr[i];
+    if(b.children){
+      const found = removeBlockById(b.children, id);
+      if(found) return found;
+    }
+    if(b.children2){
+      const found = removeBlockById(b.children2, id);
+      if(found) return found;
+    }
+  }
+  return null;
+}
+
+/* ======================================================================
+   PYTHON CODE GENERATION
+====================================================================== */
+
+function pyStr(raw){
+  // Heuristic: if it's already quoted, numeric, or a known variable expr, leave as-is.
+  return raw;
+}
+
+function genLine(block, indent){
+  const pad = '    '.repeat(indent);
+  switch(block.type){
+    case 'print':
+      return [`${pad}print(${block.fields.value})`];
+    case 'setvar':
+      return [`${pad}${block.fields.name} = ${block.fields.value}`];
+    case 'changevar':
+      return [`${pad}${block.fields.name} = ${block.fields.name} + (${block.fields.value})`];
+    case 'askvar':
+      return [`${pad}${block.fields.name} = input(${block.fields.prompt})`];
+    case 'mathop':
+      return [`${pad}${block.fields.name} = ${block.fields.a} ${block.fields.op} ${block.fields.b}`];
+    case 'random':
+      return [`${pad}${block.fields.name} = random.randint(${block.fields.lo}, ${block.fields.hi})`];
+    case 'comment':
+      return [`${pad}# ${block.fields.text}`];
+    case 'repeat': {
+      const lines = [`${pad}for _ in range(${block.fields.count}):`];
+      lines.push(...genBody(block.children, indent+1));
+      return lines;
+    }
+    case 'while': {
+      const lines = [`${pad}while not (${block.fields.cond}):`];
+      lines.push(...genBody(block.children, indent+1));
+      return lines;
+    }
+    case 'foreach': {
+      const lines = [`${pad}for ${block.fields.item} in ${block.fields.list}:`];
+      lines.push(...genBody(block.children, indent+1));
+      return lines;
+    }
+    case 'if': {
+      const lines = [`${pad}if ${block.fields.cond}:`];
+      lines.push(...genBody(block.children, indent+1));
+      return lines;
+    }
+    case 'ifelse': {
+      const lines = [`${pad}if ${block.fields.cond}:`];
+      lines.push(...genBody(block.children, indent+1));
+      lines.push(`${pad}else:`);
+      lines.push(...genBody(block.children2, indent+1));
+      return lines;
+    }
+    default: return [];
+  }
+}
+
+function genBody(arr, indent){
+  if(!arr || arr.length === 0){
+    return ['    '.repeat(indent) + 'pass'];
+  }
+  const lines = [];
+  arr.forEach(b => lines.push(...genLine(b, indent)));
+  return lines;
+}
+
+function usesRandom(arr){
+  for(const b of arr){
+    if(b.type === 'random') return true;
+    if(b.children && usesRandom(b.children)) return true;
+    if(b.children2 && usesRandom(b.children2)) return true;
+  }
+  return false;
+}
+
+function generatePythonLines(){
+  let lines = [];
+  if(usesRandom(program)){
+    lines.push('import random');
+    lines.push('');
+  }
+  if(program.length === 0){
+    lines.push('# Drag blocks from the left to build your program!');
+  } else {
+    program.forEach(b => lines.push(...genLine(b, 0)));
+  }
+  return lines;
+}
+
+function syntaxHighlight(line){
+  // very small heuristic highlighter for display only
+  let l = line;
+  const escaped = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let out = escaped;
+  // strings
+  out = out.replace(/(&quot;.*?&quot;|"[^"]*"|'[^']*')/g, m => `<span class="str">${m}</span>`);
+  // comments
+  if(/^\s*#/.test(line)){
+    return `<span class="cm">${escaped}</span>`;
+  }
+  // keywords
+  out = out.replace(/\b(for|while|if|else|in|not|import|pass|def|return)\b/g, '<span class="kw">$1</span>');
+  // functions
+  out = out.replace(/\b(print|input|range|randint|random\.randint)\b/g, '<span class="fn">$1</span>');
+  // numbers
+  out = out.replace(/(?<![\w.])(-?\d+\.?\d*)(?![\w])/g, '<span class="num">$1</span>');
+  return out;
+}
+
+let lastCodeLineCount = 0;
+function renderCode(){
+  const lines = generatePythonLines();
+  const codeBody = document.getElementById('codeBody');
+  codeBody.innerHTML = '';
+  lines.forEach((line, i) => {
+    const row = document.createElement('div');
+    row.className = 'code-line';
+    if(i >= lastCodeLineCount) row.classList.add('flash');
+    const ln = document.createElement('span');
+    ln.className = 'ln';
+    ln.textContent = i+1;
+    const content = document.createElement('span');
+    content.className = 'content';
+    content.innerHTML = syntaxHighlight(line) || '&nbsp;';
+    row.appendChild(ln);
+    row.appendChild(content);
+    codeBody.appendChild(row);
+    if(row.classList.contains('flash')){
+      setTimeout(()=> row.classList.remove('flash'), 700);
+    }
+  });
+  lastCodeLineCount = lines.length;
+  window.__lastPython = lines.join('\n');
+}
+
+/* ======================================================================
+   SIMPLE PYTHON-SUBSET INTERPRETER (for Run button)
+   We don't actually run Python — we interpret our own block tree directly,
+   which is safe, sandboxed, and matches the generated code 1:1.
+====================================================================== */
+
+function runProgram(){
+  const consoleBody = document.getElementById('consoleBody');
+  consoleBody.innerHTML = '';
+  const out = [];
+  const vars = {};
+  let opCount = 0;
+  const MAX_OPS = 20000;
+
+  function log(msg, isErr){
+    const div = document.createElement('div');
+    if(isErr) div.className = 'err';
+    div.textContent = msg;
+    consoleBody.appendChild(div);
+    consoleBody.scrollTop = consoleBody.scrollHeight;
+  }
+
+  function evalExpr(expr, ctx){
+    // Build a restricted evaluation: substitute variables, support + - * / % > < >= <= == != and, or, not, parens, numbers, strings
+    // We transpile python-ish syntax lightly to JS for evaluation in a sandboxed Function.
+    let js = expr
+      .replace(/\btrue\b/gi,'true').replace(/\bfalse\b/gi,'false')
+      .replace(/\band\b/g,'&&').replace(/\bor\b/g,'||').replace(/\bnot\b/g,'!')
+      .replace(/\bTrue\b/g,'true').replace(/\bFalse\b/g,'false');
+    const fn = new Function(...Object.keys(ctx), `"use strict"; return (${js});`);
+    return fn(...Object.values(ctx));
+  }
+
+  function run(blockList, ctx){
+    for(const block of blockList){
+      opCount++;
+      if(opCount > MAX_OPS){ throw new Error('Stopped: program ran too long (possible infinite loop).'); }
+      switch(block.type){
+        case 'print': {
+          let v;
+          try { v = evalExpr(block.fields.value, ctx); } catch(e){ v = block.fields.value; }
+          log(String(v));
+          break;
+        }
+        case 'setvar': {
+          let v;
+          try { v = evalExpr(block.fields.value, ctx); } catch(e){ v = block.fields.value; }
+          ctx[block.fields.name] = v;
+          break;
+        }
+        case 'changevar': {
+          let v;
+          try { v = evalExpr(block.fields.value, ctx); } catch(e){ v = Number(block.fields.value)||0; }
+          const cur = ctx[block.fields.name] ?? 0;
+          ctx[block.fields.name] = cur + v;
+          break;
+        }
+        case 'askvar': {
+          let promptText;
+          try { promptText = evalExpr(block.fields.prompt, ctx); } catch(e){ promptText = block.fields.prompt; }
+          const answer = window.prompt(String(promptText)) ?? '';
+          ctx[block.fields.name] = answer;
+          log(`? ${promptText} → "${answer}"`);
+          break;
+        }
+        case 'mathop': {
+          let a,b;
+          try { a = evalExpr(block.fields.a, ctx); } catch(e){ a = Number(block.fields.a)||0; }
+          try { b = evalExpr(block.fields.b, ctx); } catch(e){ b = Number(block.fields.b)||0; }
+          let result;
+          switch(block.fields.op){
+            case '+': result = a + b; break;
+            case '-': result = a - b; break;
+            case '*': result = a * b; break;
+            case '/': result = a / b; break;
+            case '%': result = a % b; break;
+          }
+          ctx[block.fields.name] = result;
+          break;
+        }
+        case 'random': {
+          const lo = Number(evalExpr(block.fields.lo, ctx));
+          const hi = Number(evalExpr(block.fields.hi, ctx));
+          ctx[block.fields.name] = Math.floor(Math.random() * (hi - lo + 1)) + lo;
+          break;
+        }
+        case 'comment': break;
+        case 'repeat': {
+          const n = Math.max(0, Math.floor(Number(evalExpr(block.fields.count, ctx)) || 0));
+          for(let i=0;i<n;i++){
+            opCount++;
+            if(opCount > MAX_OPS) throw new Error('Stopped: program ran too long (possible infinite loop).');
+            run(block.children, ctx);
+          }
+          break;
+        }
+        case 'while': {
+          let guard = 0;
+          while(!evalExpr(block.fields.cond, ctx)){
+            guard++;
+            if(guard > 5000) throw new Error('Stopped: "repeat until" loop never became true (possible infinite loop).');
+            run(block.children, ctx);
+          }
+          break;
+        }
+        case 'foreach': {
+          let list;
+          try { list = evalExpr(block.fields.list, ctx); } catch(e){ list = []; }
+          if(!Array.isArray(list)){
+            // allow simple comma syntax like [1,2,3] typed without brackets, or fallback empty
+            list = [];
+          }
+          for(const item of list){
+            const childCtx = Object.assign({}, ctx, {[block.fields.item]: item});
+            run(block.children, childCtx);
+            Object.assign(ctx, childCtx);
+          }
+          break;
+        }
+        case 'if': {
+          let cond;
+          try { cond = evalExpr(block.fields.cond, ctx); } catch(e){ cond = false; }
+          if(cond) run(block.children, ctx);
+          break;
+        }
+        case 'ifelse': {
+          let cond;
+          try { cond = evalExpr(block.fields.cond, ctx); } catch(e){ cond = false; }
+          if(cond) run(block.children, ctx); else run(block.children2, ctx);
+          break;
+        }
+      }
+    }
+  }
+
+  try{
+    if(program.length === 0){
+      log('Nothing to run yet — drag some blocks in first!');
+      return;
+    }
+    run(program, vars);
+    log('— Program finished —');
+  } catch(e){
+    log('⚠ ' + e.message, true);
+  }
+}
+
+/* ======================================================================
+   TOP BAR ACTIONS
+====================================================================== */
+document.getElementById('runBtn').addEventListener('click', runProgram);
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if(program.length && !confirm('Clear all blocks from the canvas?')) return;
+  program = [];
+  renderProgram();
+});
+document.getElementById('clearConsole').addEventListener('click', () => {
+  document.getElementById('consoleBody').innerHTML = '<span class="hint">Console cleared. Click ▶ Run to try again.</span>';
+});
+
+document.getElementById('loadExampleBtn').addEventListener('click', () => {
+  program = buildExample();
+  renderProgram();
+});
+
+function buildExample(){
+  const setX = makeBlock('setvar'); setX.fields = { name:'count', value:'0' };
+  const askName = makeBlock('askvar'); askName.fields = { prompt:'"What is your name?"', name:'name' };
+  const greet = makeBlock('print'); greet.fields = { value: '"Hi " + name + "! Let\'s count to 5."' };
+
+  const loop = makeBlock('repeat'); loop.fields = { count:'5' };
+  const change = makeBlock('changevar'); change.fields = { name:'count', value:'1' };
+  const printCount = makeBlock('print'); printCount.fields = { value: 'count' };
+  const check = makeBlock('if'); check.fields = { cond: 'count == 3' };
+  const printMid = makeBlock('print'); printMid.fields = { value: '"Halfway-ish!"' };
+  check.children = [printMid];
+  loop.children = [change, printCount, check];
+
+  const done = makeBlock('print'); done.fields = { value: '"Done counting!"' };
+
+  return [setX, askName, greet, loop, done];
+}
+
+/* ======================================================================
+   INIT
+====================================================================== */
+renderProgram();
+</script>
+</body>
+</html>
