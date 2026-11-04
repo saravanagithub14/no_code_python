@@ -6,6 +6,7 @@ blocks to build a program, then run it to see the generated Python and output.
 ## Project structure
 
 - `site/index.html` — the complete static app (HTML, CSS, and JavaScript)
+- `index.html` — redirects root-based Pages deployments to the app
 - `.github/workflows/deploy-pages.yml` — publishes the app to GitHub Pages
 
 There is no build step or package installation required.
