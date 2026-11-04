@@ -895,6 +895,32 @@
   .empty-hint .arrow{color:#10aeda;}
   .code-header{background:#fff0d3;}
   .console{background:#fff8e9;}
+  .code-header .code-actions{display:flex;align-items:center;gap:8px;}
+  .code-status{font-size:11px;font-weight:600;color:#716783;}
+  .code-status.error{color:#bd4d43;}
+  .code-apply{
+    border:2px solid #49375f;
+    border-radius:9px;
+    padding:5px 10px;
+    background:#35c979;
+    color:#173c36;
+    box-shadow:0 2px 0 #49375f;
+    font:700 11px var(--font-display);
+    cursor:pointer;
+  }
+  .code-apply:active{transform:translateY(2px);box-shadow:none;}
+  .code-editor{
+    display:block;
+    width:100%;
+    min-height:0;
+    border:0;
+    outline:0;
+    resize:none;
+    background:transparent;
+    color:#34274b;
+    tab-size:4;
+  }
+  .code-editor:focus{box-shadow:inset 0 0 0 2px rgba(16,185,239,.22);}
   .nest{border-left-color:rgba(53,38,79,.38);}
   .nest-drop{border-color:#b8abc9;color:#81768f;}
   .zone-active.nest-drop{
@@ -977,8 +1003,12 @@
   <div class="code-panel">
     <div class="code-header">
       <div class="title"><span class="dot-row"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></span>&nbsp; program.py</div>
+      <div class="code-actions">
+        <span class="code-status" id="codeStatus" aria-live="polite">Edit code, then apply to blocks</span>
+        <button class="code-apply" id="applyCodeBtn" type="button">Apply</button>
+      </div>
     </div>
-    <div class="code-body" id="codeBody"></div>
+    <textarea class="code-body code-editor" id="codeEditor" aria-label="Python code editor" spellcheck="false"></textarea>
     <div class="console">
       <div class="console-header">
         <span>Console Output</span>
@@ -1484,50 +1514,234 @@ function generatePythonLines(){
   return lines;
 }
 
-function syntaxHighlight(line){
-  // very small heuristic highlighter for display only
-  let l = line;
-  const escaped = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  let out = escaped;
-  // strings
-  out = out.replace(/(&quot;.*?&quot;|"[^"]*"|'[^']*')/g, m => `<span class="str">${m}</span>`);
-  // comments
-  if(/^\s*#/.test(line)){
-    return `<span class="cm">${escaped}</span>`;
-  }
-  // keywords
-  out = out.replace(/\b(for|while|if|else|in|not|import|pass|def|return)\b/g, '<span class="kw">$1</span>');
-  // functions
-  out = out.replace(/\b(print|input|range|randint|random\.randint)\b/g, '<span class="fn">$1</span>');
-  // numbers
-  out = out.replace(/(?<![\w.])(-?\d+\.?\d*)(?![\w])/g, '<span class="num">$1</span>');
-  return out;
-}
-
-let lastCodeLineCount = 0;
 function renderCode(){
   const lines = generatePythonLines();
-  const codeBody = document.getElementById('codeBody');
-  codeBody.innerHTML = '';
-  lines.forEach((line, i) => {
-    const row = document.createElement('div');
-    row.className = 'code-line';
-    if(i >= lastCodeLineCount) row.classList.add('flash');
-    const ln = document.createElement('span');
-    ln.className = 'ln';
-    ln.textContent = i+1;
-    const content = document.createElement('span');
-    content.className = 'content';
-    content.innerHTML = syntaxHighlight(line) || '&nbsp;';
-    row.appendChild(ln);
-    row.appendChild(content);
-    codeBody.appendChild(row);
-    if(row.classList.contains('flash')){
-      setTimeout(()=> row.classList.remove('flash'), 700);
-    }
-  });
-  lastCodeLineCount = lines.length;
+  const codeEditor = document.getElementById('codeEditor');
+  codeEditor.value = lines.join('\n');
   window.__lastPython = lines.join('\n');
+  setCodeStatus('Code and blocks are in sync');
+}
+
+function setCodeStatus(message, isError=false){
+  const status = document.getElementById('codeStatus');
+  status.textContent = message;
+  status.classList.toggle('error', isError);
+}
+
+function extractCallArgument(text, name){
+  const prefix = name + '(';
+  if(!text.startsWith(prefix) || !text.endsWith(')')) return null;
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+  for(let i=prefix.length-1;i<text.length;i++){
+    const char = text[i];
+    if(quote){
+      if(escaped){ escaped = false; continue; }
+      if(char === '\\'){ escaped = true; continue; }
+      if(char === quote) quote = '';
+      continue;
+    }
+    if(char === '"' || char === "'"){ quote = char; continue; }
+    if(char === '(') depth++;
+    if(char === ')'){
+      depth--;
+      if(depth === 0) return i === text.length-1 ? text.slice(prefix.length, i) : null;
+      if(depth < 0) return null;
+    }
+  }
+  return null;
+}
+
+function splitTopLevelComma(text){
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+  for(let i=0;i<text.length;i++){
+    const char = text[i];
+    if(quote){
+      if(escaped){ escaped = false; continue; }
+      if(char === '\\'){ escaped = true; continue; }
+      if(char === quote) quote = '';
+      continue;
+    }
+    if(char === '"' || char === "'"){ quote = char; continue; }
+    if('([{'.includes(char)){ depth++; continue; }
+    if(')]}'.includes(char)){ depth--; continue; }
+    if(char === ',' && depth === 0){
+      return [text.slice(0,i).trim(), text.slice(i+1).trim()];
+    }
+  }
+  return null;
+}
+
+function splitTopLevelOperation(text){
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+  for(let i=0;i<text.length;i++){
+    const char = text[i];
+    if(quote){
+      if(escaped){ escaped = false; continue; }
+      if(char === '\\'){ escaped = true; continue; }
+      if(char === quote) quote = '';
+      continue;
+    }
+    if(char === '"' || char === "'"){ quote = char; continue; }
+    if('([{'.includes(char)){ depth++; continue; }
+    if(')]}'.includes(char)){ depth--; continue; }
+    if(depth === 0 && '+-*/%'.includes(char) && text[i-1] === ' ' && text[i+1] === ' '){
+      const left = text.slice(0,i).trim();
+      const right = text.slice(i+2).trim();
+      if(left && right) return [left, char, right];
+    }
+  }
+  return null;
+}
+
+function parsePythonBlocks(source){
+  const rawLines = source.replace(/\r\n?/g, '\n').split('\n');
+  if(rawLines.every(line => !line.trim() || line.trim() === '# Drag blocks from the left to build your program!')) return [];
+
+  const lines = [];
+  rawLines.forEach((raw, index) => {
+    if(!raw.trim()) return;
+    if(raw.includes('\t')) throw new Error(`Line ${index+1}: use spaces for indentation.`);
+    const indent = raw.length - raw.trimStart().length;
+    if(indent % 4 !== 0) throw new Error(`Line ${index+1}: indentation must use groups of 4 spaces.`);
+    const text = raw.trim();
+    if(text === 'import random' && indent === 0) return;
+    lines.push({indent, text, lineNumber:index+1});
+  });
+
+  let cursor = 0;
+  function parseSuite(indent){
+    const blocks = [];
+    while(cursor < lines.length){
+      const line = lines[cursor];
+      if(line.indent < indent) break;
+      if(line.indent > indent){
+        throw new Error(`Line ${line.lineNumber}: unexpected indentation.`);
+      }
+      if(line.text === 'else:'){
+        throw new Error(`Line ${line.lineNumber}: else must follow an if block.`);
+      }
+      if(line.text === 'pass'){
+        cursor++;
+        continue;
+      }
+      if(line.text.startsWith('#')){
+        cursor++;
+        blocks.push(makeParsedBlock('comment', {text:line.text.slice(1).trimStart()}));
+        continue;
+      }
+
+      let match = line.text.match(/^for _ in range\((.*)\):$/);
+      if(match){
+        cursor++;
+        const block = makeParsedBlock('repeat', {count:match[1]});
+        block.children = parseSuite(indent+4);
+        blocks.push(block);
+        continue;
+      }
+      match = line.text.match(/^for ([A-Za-z_]\w*) in (.+):$/);
+      if(match){
+        cursor++;
+        const block = makeParsedBlock('foreach', {item:match[1],list:match[2]});
+        block.children = parseSuite(indent+4);
+        blocks.push(block);
+        continue;
+      }
+      match = line.text.match(/^while not \((.*)\):$/);
+      if(match){
+        cursor++;
+        const block = makeParsedBlock('while', {cond:match[1]});
+        block.children = parseSuite(indent+4);
+        blocks.push(block);
+        continue;
+      }
+      match = line.text.match(/^if (.+):$/);
+      if(match){
+        cursor++;
+        const children = parseSuite(indent+4);
+        if(cursor < lines.length && lines[cursor].indent === indent && lines[cursor].text === 'else:'){
+          cursor++;
+          const block = makeParsedBlock('ifelse', {cond:match[1]});
+          block.children = children;
+          block.children2 = parseSuite(indent+4);
+          blocks.push(block);
+        } else {
+          const block = makeParsedBlock('if', {cond:match[1]});
+          block.children = children;
+          blocks.push(block);
+        }
+        continue;
+      }
+
+      const printValue = extractCallArgument(line.text, 'print');
+      if(printValue !== null){
+        cursor++;
+        blocks.push(makeParsedBlock('print', {value:printValue}));
+        continue;
+      }
+
+      match = line.text.match(/^([A-Za-z_]\w*) = (.+)$/);
+      if(match){
+        cursor++;
+        const [, name, value] = match;
+        const inputPrompt = extractCallArgument(value, 'input');
+        if(inputPrompt !== null){
+          blocks.push(makeParsedBlock('askvar', {name,prompt:inputPrompt}));
+          continue;
+        }
+        const randomArgs = extractCallArgument(value, 'random.randint');
+        if(randomArgs !== null){
+          const [lo, hi] = splitTopLevelComma(randomArgs) || [];
+          if(lo !== undefined && hi !== undefined){
+            blocks.push(makeParsedBlock('random', {name,lo,hi}));
+            continue;
+          }
+        }
+        const change = value.match(new RegExp('^' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\+ \\((.*)\\)$'));
+        if(change){
+          blocks.push(makeParsedBlock('changevar', {name,value:change[1]}));
+          continue;
+        }
+        const operation = splitTopLevelOperation(value);
+        if(operation){
+          blocks.push(makeParsedBlock('mathop', {name,a:operation[0],op:operation[1],b:operation[2]}));
+          continue;
+        }
+        blocks.push(makeParsedBlock('setvar', {name,value}));
+        continue;
+      }
+
+      throw new Error(`Line ${line.lineNumber}: this Python statement is not supported by the block editor.`);
+    }
+    return blocks;
+  }
+
+  const blocks = parseSuite(0);
+  if(cursor < lines.length){
+    throw new Error(`Line ${lines[cursor].lineNumber}: could not read this block.`);
+  }
+  return blocks;
+}
+
+function makeParsedBlock(type, fields){
+  const block = makeBlock(type);
+  block.fields = Object.assign(defaultFields(type), fields);
+  return block;
+}
+
+function applyPythonToBlocks(){
+  try{
+    program = parsePythonBlocks(document.getElementById('codeEditor').value);
+    renderProgram();
+    setCodeStatus('Blocks updated from code');
+  } catch(error){
+    setCodeStatus(error.message, true);
+  }
 }
 
 /* ======================================================================
@@ -1681,6 +1895,16 @@ function runProgram(){
    TOP BAR ACTIONS
 ====================================================================== */
 document.getElementById('runBtn').addEventListener('click', runProgram);
+document.getElementById('applyCodeBtn').addEventListener('click', applyPythonToBlocks);
+document.getElementById('codeEditor').addEventListener('input', () => {
+  setCodeStatus('Code edited — apply to update blocks');
+});
+document.getElementById('codeEditor').addEventListener('keydown', e => {
+  if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
+    e.preventDefault();
+    applyPythonToBlocks();
+  }
+});
 document.getElementById('clearBtn').addEventListener('click', () => {
   if(program.length && !confirm('Clear all blocks from the canvas?')) return;
   program = [];
