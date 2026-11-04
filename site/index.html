@@ -928,11 +928,100 @@
     border-color:#dc9415 !important;
     color:#705326 !important;
   }
+  .lesson-deck{
+    min-height:128px;
+    padding:12px 18px 10px;
+    background:#fff8e9;
+    border-bottom:2px solid #35264f;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    gap:10px 20px;
+    align-items:center;
+  }
+  .lesson-copy{min-width:0;}
+  .lesson-eyebrow{
+    color:#078fc8;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.3px;
+    text-transform:uppercase;
+  }
+  .lesson-heading-row{display:flex;align-items:baseline;gap:10px;margin:2px 0;}
+  .lesson-heading{margin:0;color:#302448;font-size:19px;line-height:1.2;}
+  .lesson-count{color:#8b7d99;font-size:11px;font-weight:700;white-space:nowrap;}
+  .lesson-description{margin:0;color:#716783;font-size:12px;line-height:1.4;}
+  .lesson-goal{
+    max-width:290px;
+    padding:9px 12px;
+    border:2px solid #dcd0bf;
+    border-radius:12px;
+    background:#fffdf7;
+    color:#594c68;
+    font-size:11px;
+    line-height:1.4;
+  }
+  .lesson-goal strong{color:#302448;}
+  .lesson-nav{
+    grid-column:1 / -1;
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    padding:2px 2px 5px;
+  }
+  .lesson-tab{
+    flex:0 0 auto;
+    padding:6px 10px;
+    border:1.5px solid #d7ccdd;
+    border-radius:999px;
+    background:#fffdf7;
+    color:#625773;
+    font:700 10px var(--font-display);
+    cursor:pointer;
+  }
+  .lesson-tab[aria-current="step"]{
+    border-color:#49375f;
+    background:#c9b8ff;
+    color:#302448;
+    box-shadow:0 2px 0 #49375f;
+  }
+  .lesson-starter{
+    flex:0 0 auto;
+    margin-left:auto;
+    padding:6px 10px;
+    border:1.5px solid #49375f;
+    border-radius:9px;
+    background:#35c979;
+    color:#173c36;
+    font:700 10px var(--font-display);
+    cursor:pointer;
+  }
+  .c-types{background:#75d7b4;}
   @media (min-width:821px){
-    .app{grid-template-columns:250px minmax(0,1fr) minmax(0,1fr);}
+    body{display:flex;flex-direction:column;}
+    .topbar,.lesson-deck{flex:0 0 auto;}
+    .app{
+      flex:1 1 auto;
+      min-height:0;
+      height:auto;
+      grid-template-columns:250px minmax(0,1fr) minmax(0,1fr);
+    }
   }
   @media (min-width:821px) and (max-width:1100px){
     .app{grid-template-columns:210px minmax(0,1fr) minmax(0,1fr);}
+  }
+  @media (max-width:820px){
+    body{display:block;}
+    .lesson-deck{min-height:0;padding:12px;grid-template-columns:minmax(0,1fr);}
+    .lesson-goal{max-width:none;}
+    .lesson-nav{grid-column:1;}
+    .app{min-height:calc(100vh - 230px);}
+  }
+  @media (max-width:520px){
+    .lesson-heading{font-size:17px;}
+    .lesson-description{font-size:11px;}
+    .lesson-nav{gap:5px;}
+    .lesson-tab{padding:6px 9px;}
   }
 </style>
 </head>
@@ -952,6 +1041,22 @@
   </div>
 </div>
 
+<section class="lesson-deck" aria-labelledby="lessonHeading">
+  <div class="lesson-copy">
+    <div class="lesson-eyebrow">Python Basics · Learn by building</div>
+    <div class="lesson-heading-row">
+      <h1 class="lesson-heading" id="lessonHeading"></h1>
+      <span class="lesson-count" id="lessonCount"></span>
+    </div>
+    <p class="lesson-description" id="lessonDescription"></p>
+  </div>
+  <div class="lesson-goal">
+    <div id="lessonGoal"></div>
+    <button class="lesson-starter" id="lessonStarter" type="button">Load starter blocks</button>
+  </div>
+  <nav class="lesson-nav" id="lessonNav" aria-label="Python Basics lessons"></nav>
+</section>
+
 <div class="app">
   <!-- PALETTE -->
   <div class="palette" id="palette">
@@ -959,6 +1064,7 @@
     <div class="cat-group">
       <div class="cat-title" style="color:var(--cat-output)"><span class="cat-dot" style="background:var(--cat-output)"></span>Output</div>
       <div class="palette-block c-output" data-type="print">say <span class="ph">"Hello!"</span></div>
+      <div class="palette-block c-types" data-type="typecheck">show type of <span class="ph">x</span></div>
     </div>
 
     <div class="cat-group">
@@ -966,6 +1072,7 @@
       <div class="palette-block c-vars" data-type="setvar">set <span class="ph">x</span> to <span class="ph">0</span></div>
       <div class="palette-block c-vars" data-type="changevar">change <span class="ph">x</span> by <span class="ph">1</span></div>
       <div class="palette-block c-vars" data-type="askvar">ask <span class="ph">"name?"</span> → <span class="ph">x</span></div>
+      <div class="palette-block c-types" data-type="convert">convert <span class="ph">x</span> to <span class="ph">int</span></div>
     </div>
 
     <div class="cat-group">
@@ -1039,9 +1146,11 @@ let program = []; // array of top-level block objects
 
 const BLOCK_META = {
   print:      { cls:'c-output', container:false },
+  typecheck:  { cls:'c-types',  container:false },
   setvar:     { cls:'c-vars',   container:false },
   changevar:  { cls:'c-vars',   container:false },
   askvar:     { cls:'c-vars',   container:false },
+  convert:    { cls:'c-types',  container:false },
   repeat:     { cls:'c-loops',  container:true  },
   while:      { cls:'c-loops',  container:true  },
   foreach:    { cls:'c-loops',  container:true  },
@@ -1055,9 +1164,11 @@ const BLOCK_META = {
 function defaultFields(type){
   switch(type){
     case 'print': return { value: '"Hello!"' };
+    case 'typecheck': return { value:'x' };
     case 'setvar': return { name:'x', value:'0' };
     case 'changevar': return { name:'x', value:'1' };
     case 'askvar': return { prompt:'"What is your name?"', name:'x' };
+    case 'convert': return { name:'x', to:'int', value:'x' };
     case 'repeat': return { count:'10' };
     case 'while': return { cond:'x > 10' };
     case 'foreach': return { item:'item', list:'[1, 2, 3]' };
@@ -1148,6 +1259,9 @@ function renderBlock(block, parentArray, indexInParent){
     case 'print':
       body.appendChild(label('say')); body.appendChild(fieldInput(block,'value',{width:'110px'}));
       break;
+    case 'typecheck':
+      body.appendChild(label('show type of')); body.appendChild(fieldInput(block,'value',{width:'60px'}));
+      break;
     case 'setvar':
       body.appendChild(label('set')); body.appendChild(fieldInput(block,'name',{width:'40px'}));
       body.appendChild(label('to')); body.appendChild(fieldInput(block,'value',{width:'60px'}));
@@ -1159,6 +1273,11 @@ function renderBlock(block, parentArray, indexInParent){
     case 'askvar':
       body.appendChild(label('ask')); body.appendChild(fieldInput(block,'prompt',{width:'130px'}));
       body.appendChild(label('→ store in')); body.appendChild(fieldInput(block,'name',{width:'40px'}));
+      break;
+    case 'convert':
+      body.appendChild(label('set')); body.appendChild(fieldInput(block,'name',{width:'44px'}));
+      body.appendChild(label('to')); body.appendChild(fieldSelect(block,'to',['int','float','str','bool']));
+      body.appendChild(label('of')); body.appendChild(fieldInput(block,'value',{width:'60px'}));
       break;
     case 'repeat':
       body.appendChild(label('repeat')); body.appendChild(fieldInput(block,'count',{width:'40px'}));
@@ -1445,12 +1564,16 @@ function genLine(block, indent){
   switch(block.type){
     case 'print':
       return [`${pad}print(${block.fields.value})`];
+    case 'typecheck':
+      return [`${pad}print(type(${block.fields.value}).__name__)`];
     case 'setvar':
       return [`${pad}${block.fields.name} = ${block.fields.value}`];
     case 'changevar':
       return [`${pad}${block.fields.name} = ${block.fields.name} + (${block.fields.value})`];
     case 'askvar':
       return [`${pad}${block.fields.name} = input(${block.fields.prompt})`];
+    case 'convert':
+      return [`${pad}${block.fields.name} = ${block.fields.to}(${block.fields.value})`];
     case 'mathop':
       return [`${pad}${block.fields.name} = ${block.fields.a} ${block.fields.op} ${block.fields.b}`];
     case 'random':
@@ -1687,6 +1810,11 @@ function parsePythonBlocks(source){
       const printValue = extractCallArgument(line.text, 'print');
       if(printValue !== null){
         cursor++;
+        const typeCheck = printValue.match(/^type\((.*)\)\.__name__$/);
+        if(typeCheck){
+          blocks.push(makeParsedBlock('typecheck', {value:typeCheck[1]}));
+          continue;
+        }
         blocks.push(makeParsedBlock('print', {value:printValue}));
         continue;
       }
@@ -1698,6 +1826,11 @@ function parsePythonBlocks(source){
         const inputPrompt = extractCallArgument(value, 'input');
         if(inputPrompt !== null){
           blocks.push(makeParsedBlock('askvar', {name,prompt:inputPrompt}));
+          continue;
+        }
+        const conversion = value.match(/^(int|float|str|bool)\((.*)\)$/);
+        if(conversion){
+          blocks.push(makeParsedBlock('convert', {name,to:conversion[1],value:conversion[2]}));
           continue;
         }
         const randomArgs = extractCallArgument(value, 'random.randint');
@@ -1794,6 +1927,18 @@ function runProgram(){
           log(String(v));
           break;
         }
+        case 'typecheck': {
+          const value = evalExpr(block.fields.value, ctx);
+          let typeName;
+          if(value === null) typeName = 'NoneType';
+          else if(Array.isArray(value)) typeName = 'list';
+          else if(typeof value === 'boolean') typeName = 'bool';
+          else if(typeof value === 'number') typeName = Number.isInteger(value) ? 'int' : 'float';
+          else if(typeof value === 'string') typeName = 'str';
+          else typeName = 'dict';
+          log(typeName);
+          break;
+        }
         case 'setvar': {
           let v;
           try { v = evalExpr(block.fields.value, ctx); } catch(e){ v = block.fields.value; }
@@ -1813,6 +1958,34 @@ function runProgram(){
           const answer = window.prompt(String(promptText)) ?? '';
           ctx[block.fields.name] = answer;
           log(`? ${promptText} → "${answer}"`);
+          break;
+        }
+        case 'convert': {
+          const value = evalExpr(block.fields.value, ctx);
+          let converted;
+          switch(block.fields.to){
+            case 'int': {
+              const number = typeof value === 'string' && !/^[+-]?\d+$/.test(value.trim())
+                ? NaN
+                : Number(value);
+              if(!Number.isFinite(number)) throw new Error(`Cannot convert ${JSON.stringify(value)} to int.`);
+              converted = Math.trunc(number);
+              break;
+            }
+            case 'float':
+              converted = Number(value);
+              if(!Number.isFinite(converted)) throw new Error(`Cannot convert ${JSON.stringify(value)} to float.`);
+              break;
+            case 'str':
+              converted = String(value);
+              break;
+            case 'bool':
+              converted = Boolean(value);
+              break;
+            default:
+              throw new Error(`Unknown conversion type: ${block.fields.to}`);
+          }
+          ctx[block.fields.name] = converted;
           break;
         }
         case 'mathop': {
@@ -1900,6 +2073,121 @@ function runProgram(){
 /* ======================================================================
    TOP BAR ACTIONS
 ====================================================================== */
+const BASICS_LESSONS = [
+  {
+    title:'Variables',
+    description:'A variable is a named place to keep a value. Give it a name, assign something to it, then use that name later.',
+    goal:'Create a variable called <strong>name</strong> and print a greeting.',
+    starter(){
+      return [
+        makeParsedBlock('setvar',{name:'name',value:'"Mika"'}),
+        makeParsedBlock('print',{value:'"Hello, " + name'}),
+      ];
+    },
+  },
+  {
+    title:'Data types',
+    description:'Python values have types. Try a string, integer, decimal, and Boolean, then inspect each type.',
+    goal:'Predict the type of each value before you run the program.',
+    starter(){
+      return [
+        makeParsedBlock('setvar',{name:'nickname',value:'"Pip"'}),
+        makeParsedBlock('setvar',{name:'age',value:'12'}),
+        makeParsedBlock('setvar',{name:'height',value:'1.5'}),
+        makeParsedBlock('setvar',{name:'is_learning',value:'True'}),
+        makeParsedBlock('typecheck',{value:'nickname'}),
+        makeParsedBlock('typecheck',{value:'age'}),
+        makeParsedBlock('typecheck',{value:'height'}),
+        makeParsedBlock('typecheck',{value:'is_learning'}),
+      ];
+    },
+  },
+  {
+    title:'Input & output',
+    description:'Use input() to ask a question. Store the answer in a variable, then use print() to show a response.',
+    goal:'Run the starter and enter your name when Python asks.',
+    starter(){
+      return [
+        makeParsedBlock('askvar',{name:'name',prompt:'"What is your name?"'}),
+        makeParsedBlock('print',{value:'"Nice to meet you, " + name + "!"'}),
+      ];
+    },
+  },
+  {
+    title:'Operators',
+    description:'Operators do work with values: + adds, - subtracts, * multiplies, / divides, and % finds a remainder.',
+    goal:'Change the numbers or operator and see the result.',
+    starter(){
+      return [
+        makeParsedBlock('setvar',{name:'apples',value:'8'}),
+        makeParsedBlock('setvar',{name:'friends',value:'3'}),
+        makeParsedBlock('mathop',{name:'each',a:'apples',op:'/',b:'friends'}),
+        makeParsedBlock('print',{value:'each'}),
+        makeParsedBlock('mathop',{name:'left_over',a:'apples',op:'%',b:'friends'}),
+        makeParsedBlock('print',{value:'left_over'}),
+      ];
+    },
+  },
+  {
+    title:'Type conversion',
+    description:'input() gives you text. Convert numeric text with int() or float() before doing math.',
+    goal:'Try entering 12, then change the conversion to float.',
+    starter(){
+      return [
+        makeParsedBlock('askvar',{name:'age_text',prompt:'"How old are you?"'}),
+        makeParsedBlock('convert',{name:'age',to:'int',value:'age_text'}),
+        makeParsedBlock('mathop',{name:'next_year',a:'age',op:'+',b:'1'}),
+        makeParsedBlock('print',{value:'next_year'}),
+      ];
+    },
+  },
+  {
+    title:'Your first program',
+    description:'Put the basics together: ask for a name and age, convert the age to a number, then calculate and print.',
+    goal:'Run it, try different answers, then personalize the greeting.',
+    starter(){
+      return [
+        makeParsedBlock('askvar',{name:'name',prompt:'"What is your name?"'}),
+        makeParsedBlock('askvar',{name:'age_text',prompt:'"How old are you?"'}),
+        makeParsedBlock('convert',{name:'age',to:'int',value:'age_text'}),
+        makeParsedBlock('mathop',{name:'next_age',a:'age',op:'+',b:'1'}),
+        makeParsedBlock('print',{value:'"Hello, " + name + "!"'}),
+        makeParsedBlock('print',{value:'"Next year you will be:"'}),
+        makeParsedBlock('print',{value:'next_age'}),
+      ];
+    },
+  },
+];
+
+let activeLessonIndex = 0;
+function renderLesson(){
+  const lesson = BASICS_LESSONS[activeLessonIndex];
+  document.getElementById('lessonHeading').textContent = lesson.title;
+  document.getElementById('lessonCount').textContent = `${activeLessonIndex+1} of ${BASICS_LESSONS.length}`;
+  document.getElementById('lessonDescription').textContent = lesson.description;
+  document.getElementById('lessonGoal').innerHTML = `<strong>Your mission:</strong> ${lesson.goal}`;
+  const nav = document.getElementById('lessonNav');
+  nav.innerHTML = '';
+  BASICS_LESSONS.forEach((item,index) => {
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.className = 'lesson-tab';
+    tab.textContent = `${index+1}. ${item.title}`;
+    if(index === activeLessonIndex) tab.setAttribute('aria-current','step');
+    tab.addEventListener('click', () => {
+      activeLessonIndex = index;
+      renderLesson();
+    });
+    nav.appendChild(tab);
+  });
+}
+
+document.getElementById('lessonStarter').addEventListener('click', () => {
+  program = BASICS_LESSONS[activeLessonIndex].starter();
+  renderProgram();
+});
+renderLesson();
+
 document.getElementById('runBtn').addEventListener('click', runProgram);
 document.getElementById('applyCodeBtn').addEventListener('click', applyPythonToBlocks);
 document.getElementById('codeEditor').addEventListener('input', () => {
