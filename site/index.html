@@ -2051,7 +2051,23 @@ function buildExample(){
 /* ======================================================================
    INIT
 ====================================================================== */
-renderProgram();
+const practiceCode = new URLSearchParams(window.location.search).get('practice');
+if(practiceCode !== null){
+  const codeEditor = document.getElementById('codeEditor');
+  codeEditor.value = practiceCode;
+  try{
+    program = parsePythonBlocks(practiceCode);
+    renderProgram();
+    setCodeStatus('Lesson example loaded — click ▶ Run to try it');
+  } catch(error){
+    program = [];
+    renderProgram();
+    codeEditor.value = practiceCode;
+    setCodeStatus(`Could not load lesson example: ${error.message}`, true);
+  }
+} else {
+  renderProgram();
+}
 </script>
 </body>
 </html>
