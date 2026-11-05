@@ -87,7 +87,28 @@
     .chapter-icon{width:48px;height:48px;display:grid;place-items:center;border:2px solid var(--line);border-radius:15px;background:#d9f4e7;font-size:25px}
     .chapter-kicker{color:#078fc8;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
     h2{margin:0;font-size:26px;line-height:1.2}
-    .lesson-description{margin:16px 0;color:#625773;font-size:15px;line-height:1.6}
+    .theory-document{
+      margin-top:20px;padding:20px 22px;border:2px solid #d8ccdf;border-radius:16px;
+      background:#fffefa;box-shadow:0 3px 0 rgba(73,55,95,.16)
+    }
+    .document-label,.example-label{
+      display:flex;align-items:center;gap:8px;color:#078fc8;font-size:10px;
+      font-weight:800;letter-spacing:1.2px;text-transform:uppercase
+    }
+    .document-label::before{content:"";width:10px;height:10px;border-radius:3px;background:#c9b8ff}
+    .theory-document h3{margin:4px 0 10px;font-size:20px}
+    .theory-copy{color:#625773;font-size:14px;line-height:1.75}
+    .theory-copy p{margin:0 0 10px}
+    .theory-copy p:last-child{margin-bottom:0}
+    .key-idea{
+      margin-top:14px;padding:10px 12px;border-left:4px solid #75d7b4;
+      border-radius:0 10px 10px 0;background:#eaf8f0;color:#385b4d;font-size:13px;line-height:1.55
+    }
+    .key-idea strong{color:#276b52}
+    .example-section{margin-top:20px}
+    .example-label{margin:0 0 8px;color:#655b7b}
+    .example-label::before{content:"🐍";font-size:14px;letter-spacing:0}
+    .example-note{margin:0 0 9px;color:#625773;font-size:13px;line-height:1.55}
     .code-card{overflow:hidden;border:2px solid var(--line);border-radius:14px;background:#28253d}
     .code-label{padding:7px 12px;background:#403858;color:#e5dafa;font-size:11px;font-weight:700}
     pre{margin:0;padding:16px;overflow:auto;color:#f8e6ab;font:13px/1.65 var(--mono)}
@@ -180,11 +201,21 @@
             <h2 id="chapterTitle"></h2>
           </div>
         </div>
-        <p class="lesson-description" id="chapterDescription"></p>
-        <div class="code-card">
-          <div class="code-label">🐍 Try reading this Python</div>
-          <pre><code id="chapterCode"></code></pre>
-        </div>
+        <article class="theory-document" aria-labelledby="theoryTitle">
+          <div class="document-label">Chapter notes</div>
+          <h3 id="theoryTitle">Learn the idea</h3>
+          <div class="theory-copy" id="theoryBody"></div>
+          <aside class="key-idea" id="keyIdea"></aside>
+        </article>
+        <section class="example-section" aria-labelledby="exampleTitle">
+          <h3 class="example-label" id="exampleTitle">Prebuilt code example</h3>
+          <p class="example-note" id="exampleNote"></p>
+          <div class="code-card">
+            <div class="code-label">Example · Python</div>
+            <pre><code id="chapterCode"></code></pre>
+          </div>
+          <p class="example-note" id="exampleExplanation"></p>
+        </section>
         <div class="mission">
           <h3 id="missionTitle">🎯 Level mission</h3>
           <p id="missionQuestion"></p>
@@ -203,42 +234,58 @@
     const LEVELS = [
       {
         title:'Say hello',icon:'👋',description:'Programs can show messages with print(). Put the message in quotes to make it text (a string).',
+        theory:['A Python program is a set of instructions that the computer follows. To show a message, use the built-in print() function.','Text values are called strings. Write a string inside matching quotation marks, then place it between the parentheses of print().'],
+        keyIdea:'print("Hello") displays the text Hello. Keep the quotes around the text.',exampleNote:'This one-line program asks Python to display a friendly greeting.',exampleExplanation:'The text inside the parentheses is the message print() displays.',
         code:'print("Hello, Python!")',question:'Which line prints the words Hello?',choices:['print("Hello")','say("Hello")','show "Hello"','echo("Hello")'],answer:0,
         success:'Great start! print() sends a message to the screen.',badge:'First words'
       },
       {
         title:'Meet variables',icon:'📦',description:'A variable is a name for a value. Use = to store a value, then use the name to get it back.',
-        code:'pet = "Mochi"\\nprint(pet)',question:'What does pet contain after this assignment?',choices:['The word pet','"Mochi"','Nothing','The print function'],answer:1,
+        theory:['Variables let a program remember information. Give a value a clear name and assign it with the = operator. Python creates the variable when it first sees that assignment.','After assigning a value, use the variable name to refer to it again. In this example, pet stores a text value, and print(pet) displays the stored value.'],
+        keyIdea:'The = sign assigns a value to a name. It does not mean “is equal to” as it does in a math equation.',exampleNote:'First, save a pet’s name. Then pass the variable to print() to display it.',exampleExplanation:'The output is Mochi. Python looks up pet and uses the value stored there.',
+        code:'pet = "Mochi"\nprint(pet)',question:'What does pet contain after this assignment?',choices:['The word pet','"Mochi"','Nothing','The print function'],answer:1,
         success:'You stored and reused a value. That is a variable!',badge:'Value keeper'
       },
       {
         title:'Types of things',icon:'🧩',description:'Python values have types: strings for text, integers for whole numbers, floats for decimals, and Booleans for True or False.',
-        code:'name = "Ada"    # str\\nage = 12         # int\\nheight = 1.5     # float\\nready = True     # bool',question:'Which value is an integer?',choices:['"12"','12','12.0','True'],answer:1,
+        theory:['Every value in Python has a type. A str (string) represents text, an int (integer) is a whole number, and a float is a number with a decimal point.','A bool (Boolean) has one of two values: True or False. The type determines what kind of operations make sense for a value. Quotes turn digits into text, so "12" is a string while 12 is an integer.'],
+        keyIdea:'Quotation marks mean text. Without quotes, Python reads numeric values as numbers and True or False as Booleans.',exampleNote:'Read each assignment and compare the value with its type comment.',exampleExplanation:'The comments after # are notes for people; Python does not execute them.',
+        code:'name = "Ada"    # str\nage = 12         # int\nheight = 1.5     # float\nready = True     # bool',question:'Which value is an integer?',choices:['"12"','12','12.0','True'],answer:1,
         success:'Exactly! 12 is an int. Quotes make "12" text, while 12.0 is a float.',badge:'Type explorer'
       },
       {
         title:'Ask a question',icon:'💬',description:'input() pauses to collect what someone types. Its result is text, so save it in a variable to use later.',
-        code:'name = input("Your name? ")\\nprint("Hi, " + name)',question:'What type of value does input() return?',choices:['Always an integer','A list','Text (a string)','A Boolean'],answer:2,
+        theory:['Programs can interact with people using input(). It displays a prompt and waits for the person to type a response and press Enter.','Save the response in a variable so the program can use it later. input() always returns text (a string), even if the person enters digits. You can combine strings with + to make a greeting.'],
+        keyIdea:'The value returned by input() is a string. Convert it with int() or float() before doing number calculations.',exampleNote:'The program asks for a name, remembers the response, and greets the person.',exampleExplanation:'Try changing the prompt or the greeting to make the program your own.',
+        code:'name = input("Your name? ")\nprint("Hi, " + name)',question:'What type of value does input() return?',choices:['Always an integer','A list','Text (a string)','A Boolean'],answer:2,
         success:'Right! input() returns a string, even when someone types digits.',badge:'Conversation starter'
       },
       {
         title:'Do the math',icon:'🧮',description:'Python uses +, -, *, and / for arithmetic. Use int() to turn number-text into a whole number before calculating.',
-        code:'apples = 8\\nfriends = 2\\nprint(apples / friends)  # 4.0',question:'What is 8 % 3? The % operator gives the remainder.',choices:['2','2.67','3','0'],answer:0,
+        theory:['Python can calculate with numbers. Use + for addition, - for subtraction, * for multiplication, and / for division. Parentheses can make the order of an expression easier to understand.','The remainder operator % tells you what is left over after division. For example, 8 % 3 is 2 because 3 fits into 8 twice, with 2 remaining.'],
+        keyIdea:'Use int("12") to convert number text to the whole number 12 before doing arithmetic.',exampleNote:'Divide eight apples equally among two friends.',exampleExplanation:'Division with / returns 4.0. Try replacing / with % to see the remainder instead.',
+        code:'apples = 8\nfriends = 2\nprint(apples / friends)  # 4.0',question:'What is 8 % 3? The % operator gives the remainder.',choices:['2','2.67','3','0'],answer:0,
         success:'Nice! % gives the remainder after division: 8 divided by 3 leaves 2.',badge:'Number wizard'
       },
       {
         title:'Make a decision',icon:'🚦',description:'An if statement runs code only when its condition is True. Indent the lines that belong inside it.',
-        code:'score = 7\\nif score >= 5:\\n    print("Level up!")',question:'Will the message print when score is 7?',choices:['Yes, because 7 is at least 5','No, if always skips','Only if score is 5','The code is missing a loop'],answer:0,
+        theory:['A condition is an expression that evaluates to True or False. Comparisons such as == (equal), != (not equal), > (greater than), and <= (less than or equal to) create conditions.','An if statement checks its condition. When the condition is True, Python runs the indented code underneath it. Indentation is important: it marks which instructions belong to the if statement.'],
+        keyIdea:'A colon : starts an if statement’s body. Indent the instructions that should run when the condition is True.',exampleNote:'Check whether a score is high enough to show a level-up message.',exampleExplanation:'Because 7 is greater than or equal to 5, Python runs the indented print() line.',
+        code:'score = 7\nif score >= 5:\n    print("Level up!")',question:'Will the message print when score is 7?',choices:['Yes, because 7 is at least 5','No, if always skips','Only if score is 5','The code is missing a loop'],answer:0,
         success:'Correct! 7 >= 5 is True, so the indented print runs.',badge:'Path chooser'
       },
       {
         title:'Repeat with loops',icon:'🔁',description:'A for loop repeats its indented body for each item in a sequence. range(3) counts 0, 1, and 2.',
-        code:'for number in range(3):\\n    print(number)',question:'How many times does this loop print?',choices:['2','3','4','Forever'],answer:1,
+        theory:['Loops repeat instructions so you do not have to write the same line over and over. A for loop takes each value from a sequence and runs its indented body once for that value.','range(3) produces three numbers: 0, 1, and 2. It starts at zero and stops just before the number in parentheses. The loop variable number takes each value in turn.'],
+        keyIdea:'The body of a loop is indented. range(3) repeats three times, even though its final value is 2.',exampleNote:'Use a for loop to print each number produced by range(3).',exampleExplanation:'The output is 0, then 1, then 2—one line for each loop repetition.',
+        code:'for number in range(3):\n    print(number)',question:'How many times does this loop print?',choices:['2','3','4','Forever'],answer:1,
         success:'That is 3 repetitions. range(3) starts at 0 and stops before 3.',badge:'Loop legend'
       },
       {
         title:'Keep a list',icon:'🎒',description:'Lists keep several values in order. Indexing starts at 0, so snacks[0] is the first item.',
-        code:'snacks = ["pear", "mango", "toast"]\\nprint(snacks[0])  # pear',question:'What does snacks[1] give you?',choices:['"pear"','"mango"','"toast"','The whole list'],answer:1,
+        theory:['A list stores several values in a specific order. Write its items inside square brackets [ ], separating each item with a comma. A list can hold text, numbers, or other values.','To access an item, use its index inside square brackets. Python starts counting list positions at 0: index 0 is the first item, index 1 is the second, and so on.'],
+        keyIdea:'List indexes start at 0. For a list with three items, the valid indexes are 0, 1, and 2.',exampleNote:'Create a list of snacks and read the first item by its index.',exampleExplanation:'snacks[0] gives "pear". Change 0 to 1 to get "mango".',
+        code:'snacks = ["pear", "mango", "toast"]\nprint(snacks[0])  # pear',question:'What does snacks[1] give you?',choices:['"pear"','"mango"','"toast"','The whole list'],answer:1,
         success:'You did it! List index 1 is the second item. You unlocked Python basics!',badge:'Python explorer'
       }
     ];
@@ -315,7 +362,19 @@
       document.getElementById('chapterIcon').textContent = level.icon;
       document.getElementById('chapterKicker').textContent = `Level ${activeLevel + 1} · ${level.badge}`;
       document.getElementById('chapterTitle').textContent = level.title;
-      document.getElementById('chapterDescription').textContent = level.description;
+      const theoryBody = document.getElementById('theoryBody');
+      theoryBody.replaceChildren();
+      [level.description,...level.theory].forEach(paragraphText => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = paragraphText;
+        theoryBody.append(paragraph);
+      });
+      const keyIdea = document.getElementById('keyIdea');
+      const keyLabel = document.createElement('strong');
+      keyLabel.textContent = 'KEY IDEA  ';
+      keyIdea.replaceChildren(keyLabel,document.createTextNode(level.keyIdea));
+      document.getElementById('exampleNote').textContent = level.exampleNote;
+      document.getElementById('exampleExplanation').textContent = level.exampleExplanation;
       document.getElementById('chapterCode').textContent = level.code;
       document.getElementById('missionQuestion').textContent = level.question;
       document.getElementById('missionTitle').textContent = completed.has(activeLevel) ? `🏅 Badge earned: ${level.badge}` : '🎯 Level mission · choose the right answer';
