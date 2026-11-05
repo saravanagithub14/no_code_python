@@ -638,6 +638,20 @@
     border-bottom:3px solid #35264f;
     box-shadow:0 4px 0 rgba(53,38,79,.12);
   }
+  .page-nav{display:flex;align-items:center;gap:8px;margin-left:auto;margin-right:16px;}
+  .page-nav a{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:8px 13px;border:2px solid transparent;border-radius:12px;
+    color:#625773;text-decoration:none;font-size:13px;font-weight:800;
+  }
+  .page-nav a[aria-current="page"]{
+    border-color:#49375f;background:#fff8e9;color:#302448;
+    box-shadow:0 2px 0 #49375f;
+  }
+  .page-nav .nav-badge{
+    padding:2px 7px;border-radius:999px;background:#d9f4e7;
+    color:#276b52;font-size:10px;
+  }
   .brand{font-size:22px;color:#33234e;}
   .brand .logo{
     border:2px solid #35264f;
@@ -928,78 +942,10 @@
     border-color:#dc9415 !important;
     color:#705326 !important;
   }
-  .lesson-deck{
-    min-height:128px;
-    padding:12px 18px 10px;
-    background:#fff8e9;
-    border-bottom:2px solid #35264f;
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    grid-template-rows:auto auto;
-    gap:10px 20px;
-    align-items:center;
-  }
-  .lesson-copy{min-width:0;}
-  .lesson-eyebrow{
-    color:#078fc8;
-    font-size:10px;
-    font-weight:800;
-    letter-spacing:1.3px;
-    text-transform:uppercase;
-  }
-  .lesson-heading-row{display:flex;align-items:baseline;gap:10px;margin:2px 0;}
-  .lesson-heading{margin:0;color:#302448;font-size:19px;line-height:1.2;}
-  .lesson-count{color:#8b7d99;font-size:11px;font-weight:700;white-space:nowrap;}
-  .lesson-description{margin:0;color:#716783;font-size:12px;line-height:1.4;}
-  .lesson-goal{
-    max-width:290px;
-    padding:9px 12px;
-    border:2px solid #dcd0bf;
-    border-radius:12px;
-    background:#fffdf7;
-    color:#594c68;
-    font-size:11px;
-    line-height:1.4;
-  }
-  .lesson-goal strong{color:#302448;}
-  .lesson-nav{
-    grid-column:1 / -1;
-    display:flex;
-    gap:6px;
-    overflow-x:auto;
-    padding:2px 2px 5px;
-  }
-  .lesson-tab{
-    flex:0 0 auto;
-    padding:6px 10px;
-    border:1.5px solid #d7ccdd;
-    border-radius:999px;
-    background:#fffdf7;
-    color:#625773;
-    font:700 10px var(--font-display);
-    cursor:pointer;
-  }
-  .lesson-tab[aria-current="step"]{
-    border-color:#49375f;
-    background:#c9b8ff;
-    color:#302448;
-    box-shadow:0 2px 0 #49375f;
-  }
-  .lesson-starter{
-    flex:0 0 auto;
-    margin-left:auto;
-    padding:6px 10px;
-    border:1.5px solid #49375f;
-    border-radius:9px;
-    background:#35c979;
-    color:#173c36;
-    font:700 10px var(--font-display);
-    cursor:pointer;
-  }
   .c-types{background:#75d7b4;}
   @media (min-width:821px){
     body{display:flex;flex-direction:column;}
-    .topbar,.lesson-deck{flex:0 0 auto;}
+    .topbar{flex:0 0 auto;}
     .app{
       flex:1 1 auto;
       min-height:0;
@@ -1012,16 +958,14 @@
   }
   @media (max-width:820px){
     body{display:block;}
-    .lesson-deck{min-height:0;padding:12px;grid-template-columns:minmax(0,1fr);}
-    .lesson-goal{max-width:none;}
-    .lesson-nav{grid-column:1;}
-    .app{min-height:calc(100vh - 230px);}
+    .topbar{flex-wrap:wrap;}
+    .page-nav{margin-left:auto;margin-right:0;}
+    .app{min-height:calc(100vh - 140px);}
   }
   @media (max-width:520px){
-    .lesson-heading{font-size:17px;}
-    .lesson-description{font-size:11px;}
-    .lesson-nav{gap:5px;}
-    .lesson-tab{padding:6px 9px;}
+    .topbar{align-items:center;}
+    .page-nav{order:3;width:100%;margin:0;justify-content:center;}
+    .page-nav a{padding:6px 10px;}
   }
 </style>
 </head>
@@ -1034,28 +978,16 @@
       <div class="sub">snap blocks, learn python</div>
     </div>
   </div>
+  <nav class="page-nav" aria-label="Main navigation">
+    <a href="./" aria-current="page">Sandbox</a>
+    <a href="learn.html">Learn Python <span class="nav-badge">8 levels</span></a>
+  </nav>
   <div class="topbar-actions">
     <button class="btn btn-example" id="loadExampleBtn">✨ Try an Example</button>
     <button class="btn btn-clear" id="clearBtn">🗑 Clear</button>
     <button class="btn btn-run" id="runBtn">▶ Run</button>
   </div>
 </div>
-
-<section class="lesson-deck" aria-labelledby="lessonHeading">
-  <div class="lesson-copy">
-    <div class="lesson-eyebrow">Python Basics · Learn by building</div>
-    <div class="lesson-heading-row">
-      <h1 class="lesson-heading" id="lessonHeading"></h1>
-      <span class="lesson-count" id="lessonCount"></span>
-    </div>
-    <p class="lesson-description" id="lessonDescription"></p>
-  </div>
-  <div class="lesson-goal">
-    <div id="lessonGoal"></div>
-    <button class="lesson-starter" id="lessonStarter" type="button">Load starter blocks</button>
-  </div>
-  <nav class="lesson-nav" id="lessonNav" aria-label="Python Basics lessons"></nav>
-</section>
 
 <div class="app">
   <!-- PALETTE -->
@@ -1105,7 +1037,7 @@
     <div class="canvas" id="canvas">
       <div class="empty-hint" id="emptyHint">
         <div class="arrow">⇠</div>
-        <div class="big">Drag blocks here to build your program</div>
+        <div class="big">Your Python sandbox is ready</div>
         <div>They'll snap together and turn into real Python on the right.</div>
       </div>
       <div class="script-stack" id="scriptStack"></div>
@@ -2073,121 +2005,6 @@ function runProgram(){
 /* ======================================================================
    TOP BAR ACTIONS
 ====================================================================== */
-const BASICS_LESSONS = [
-  {
-    title:'Variables',
-    description:'A variable is a named place to keep a value. Give it a name, assign something to it, then use that name later.',
-    goal:'Create a variable called <strong>name</strong> and print a greeting.',
-    starter(){
-      return [
-        makeParsedBlock('setvar',{name:'name',value:'"Mika"'}),
-        makeParsedBlock('print',{value:'"Hello, " + name'}),
-      ];
-    },
-  },
-  {
-    title:'Data types',
-    description:'Python values have types. Try a string, integer, decimal, and Boolean, then inspect each type.',
-    goal:'Predict the type of each value before you run the program.',
-    starter(){
-      return [
-        makeParsedBlock('setvar',{name:'nickname',value:'"Pip"'}),
-        makeParsedBlock('setvar',{name:'age',value:'12'}),
-        makeParsedBlock('setvar',{name:'height',value:'1.5'}),
-        makeParsedBlock('setvar',{name:'is_learning',value:'True'}),
-        makeParsedBlock('typecheck',{value:'nickname'}),
-        makeParsedBlock('typecheck',{value:'age'}),
-        makeParsedBlock('typecheck',{value:'height'}),
-        makeParsedBlock('typecheck',{value:'is_learning'}),
-      ];
-    },
-  },
-  {
-    title:'Input & output',
-    description:'Use input() to ask a question. Store the answer in a variable, then use print() to show a response.',
-    goal:'Run the starter and enter your name when Python asks.',
-    starter(){
-      return [
-        makeParsedBlock('askvar',{name:'name',prompt:'"What is your name?"'}),
-        makeParsedBlock('print',{value:'"Nice to meet you, " + name + "!"'}),
-      ];
-    },
-  },
-  {
-    title:'Operators',
-    description:'Operators do work with values: + adds, - subtracts, * multiplies, / divides, and % finds a remainder.',
-    goal:'Change the numbers or operator and see the result.',
-    starter(){
-      return [
-        makeParsedBlock('setvar',{name:'apples',value:'8'}),
-        makeParsedBlock('setvar',{name:'friends',value:'3'}),
-        makeParsedBlock('mathop',{name:'each',a:'apples',op:'/',b:'friends'}),
-        makeParsedBlock('print',{value:'each'}),
-        makeParsedBlock('mathop',{name:'left_over',a:'apples',op:'%',b:'friends'}),
-        makeParsedBlock('print',{value:'left_over'}),
-      ];
-    },
-  },
-  {
-    title:'Type conversion',
-    description:'input() gives you text. Convert numeric text with int() or float() before doing math.',
-    goal:'Try entering 12, then change the conversion to float.',
-    starter(){
-      return [
-        makeParsedBlock('askvar',{name:'age_text',prompt:'"How old are you?"'}),
-        makeParsedBlock('convert',{name:'age',to:'int',value:'age_text'}),
-        makeParsedBlock('mathop',{name:'next_year',a:'age',op:'+',b:'1'}),
-        makeParsedBlock('print',{value:'next_year'}),
-      ];
-    },
-  },
-  {
-    title:'Your first program',
-    description:'Put the basics together: ask for a name and age, convert the age to a number, then calculate and print.',
-    goal:'Run it, try different answers, then personalize the greeting.',
-    starter(){
-      return [
-        makeParsedBlock('askvar',{name:'name',prompt:'"What is your name?"'}),
-        makeParsedBlock('askvar',{name:'age_text',prompt:'"How old are you?"'}),
-        makeParsedBlock('convert',{name:'age',to:'int',value:'age_text'}),
-        makeParsedBlock('mathop',{name:'next_age',a:'age',op:'+',b:'1'}),
-        makeParsedBlock('print',{value:'"Hello, " + name + "!"'}),
-        makeParsedBlock('print',{value:'"Next year you will be:"'}),
-        makeParsedBlock('print',{value:'next_age'}),
-      ];
-    },
-  },
-];
-
-let activeLessonIndex = 0;
-function renderLesson(){
-  const lesson = BASICS_LESSONS[activeLessonIndex];
-  document.getElementById('lessonHeading').textContent = lesson.title;
-  document.getElementById('lessonCount').textContent = `${activeLessonIndex+1} of ${BASICS_LESSONS.length}`;
-  document.getElementById('lessonDescription').textContent = lesson.description;
-  document.getElementById('lessonGoal').innerHTML = `<strong>Your mission:</strong> ${lesson.goal}`;
-  const nav = document.getElementById('lessonNav');
-  nav.innerHTML = '';
-  BASICS_LESSONS.forEach((item,index) => {
-    const tab = document.createElement('button');
-    tab.type = 'button';
-    tab.className = 'lesson-tab';
-    tab.textContent = `${index+1}. ${item.title}`;
-    if(index === activeLessonIndex) tab.setAttribute('aria-current','step');
-    tab.addEventListener('click', () => {
-      activeLessonIndex = index;
-      renderLesson();
-    });
-    nav.appendChild(tab);
-  });
-}
-
-document.getElementById('lessonStarter').addEventListener('click', () => {
-  program = BASICS_LESSONS[activeLessonIndex].starter();
-  renderProgram();
-});
-renderLesson();
-
 document.getElementById('runBtn').addEventListener('click', runProgram);
 document.getElementById('applyCodeBtn').addEventListener('click', applyPythonToBlocks);
 document.getElementById('codeEditor').addEventListener('input', () => {

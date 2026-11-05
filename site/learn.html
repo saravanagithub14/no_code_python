@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#a3e9f4">
+  <title>Learn Python — PyBlocks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      color-scheme:light;
+      --ink:#302448;--muted:#776b8d;--line:#49375f;--paper:#fffaf0;
+      --sky:#a3e9f4;--green:#75d7b4;--yellow:#ffc966;--purple:#c9b8ff;
+      --display:"Baloo 2",sans-serif;--mono:"JetBrains Mono",monospace;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;color:var(--ink);font-family:var(--display);
+      background-color:var(--sky);
+      background-image:radial-gradient(circle at 8% 18%,rgba(255,255,255,.32) 0 64px,transparent 65px),
+        radial-gradient(circle at 92% 78%,rgba(255,255,255,.28) 0 90px,transparent 91px);
+    }
+    a{color:inherit}
+    .topbar{
+      min-height:72px;padding:10px 24px;display:flex;align-items:center;gap:24px;
+      background:#a8e4ef;border-bottom:3px solid var(--line);box-shadow:0 4px 0 rgba(53,38,79,.12);
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:800;text-decoration:none}
+    .logo{
+      width:38px;height:38px;display:grid;place-items:center;border:2px solid var(--line);
+      border-radius:13px;background:linear-gradient(145deg,#79d9d5,#a7c7ff 55%,#ffd477);
+      box-shadow:0 3px 0 var(--line);font:700 15px var(--mono)
+    }
+    .brand small{display:block;color:#655b7b;font-size:10px;letter-spacing:1.2px;text-transform:uppercase}
+    .page-nav{display:flex;gap:8px;margin-left:auto}
+    .page-nav a{
+      padding:7px 13px;border:2px solid transparent;border-radius:12px;
+      color:#625773;font-size:13px;font-weight:800;text-decoration:none
+    }
+    .page-nav a[aria-current=page]{border-color:var(--line);background:var(--paper);color:var(--ink);box-shadow:0 2px 0 var(--line)}
+    main{width:min(1120px,calc(100% - 32px));margin:28px auto 60px}
+    .hero{
+      display:flex;justify-content:space-between;align-items:center;gap:24px;padding:24px 28px;
+      border:3px solid var(--line);border-radius:24px;background:var(--paper);
+      box-shadow:0 7px 0 var(--line),0 13px 22px rgba(43,39,73,.12)
+    }
+    .eyebrow{color:#078fc8;font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
+    h1{margin:2px 0 4px;font-size:clamp(26px,4vw,38px);line-height:1.15}
+    .hero p{margin:0;color:var(--muted)}
+    .stats{display:flex;gap:10px;flex-shrink:0}
+    .stat{min-width:94px;padding:11px 14px;border:2px solid var(--line);border-radius:16px;text-align:center;background:#fff}
+    .stat strong{display:block;font-size:20px;line-height:1.1}
+    .stat span{color:var(--muted);font-size:11px;font-weight:700}
+    .progress-card{
+      margin-top:18px;padding:14px 18px;border:2px solid var(--line);border-radius:17px;
+      background:#fff8e9;box-shadow:0 4px 0 rgba(73,55,95,.7)
+    }
+    .progress-label{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:13px;font-weight:800}
+    .progress-track{height:13px;overflow:hidden;border:2px solid var(--line);border-radius:99px;background:#fff}
+    .progress-fill{width:0;height:100%;border-radius:99px;background:linear-gradient(90deg,#75d7b4,#ffe079);transition:width .25s ease}
+    .layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:18px;margin-top:20px;align-items:start}
+    .level-panel,.lesson-panel{
+      border:3px solid var(--line);border-radius:22px;background:var(--paper);
+      box-shadow:0 7px 0 var(--line),0 13px 22px rgba(43,39,73,.12)
+    }
+    .level-panel{padding:16px}
+    .panel-title{margin:0 0 12px;font-size:17px}
+    .level-list{display:grid;gap:8px}
+    .level-button{
+      width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;
+      border:2px solid #d8ccdf;border-radius:13px;background:#fff;color:var(--ink);
+      text-align:left;font:700 13px var(--display);cursor:pointer
+    }
+    .level-button:hover:not(:disabled){border-color:var(--line);transform:translateY(-1px)}
+    .level-button[aria-current=step]{border-color:var(--line);background:#e8e0ff;box-shadow:0 2px 0 var(--line)}
+    .level-button:disabled{opacity:.52;cursor:not-allowed}
+    .level-icon{
+      width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;
+      border:1.5px solid var(--line);border-radius:10px;background:#fff0d3;font-size:14px
+    }
+    .level-name{flex:1}
+    .level-state{color:var(--muted);font-size:10px}
+    .lesson-panel{min-height:490px;padding:24px}
+    .lesson-top{display:flex;align-items:center;gap:12px}
+    .chapter-icon{width:48px;height:48px;display:grid;place-items:center;border:2px solid var(--line);border-radius:15px;background:#d9f4e7;font-size:25px}
+    .chapter-kicker{color:#078fc8;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+    h2{margin:0;font-size:26px;line-height:1.2}
+    .lesson-description{margin:16px 0;color:#625773;font-size:15px;line-height:1.6}
+    .code-card{overflow:hidden;border:2px solid var(--line);border-radius:14px;background:#28253d}
+    .code-label{padding:7px 12px;background:#403858;color:#e5dafa;font-size:11px;font-weight:700}
+    pre{margin:0;padding:16px;overflow:auto;color:#f8e6ab;font:13px/1.65 var(--mono)}
+    .mission{
+      margin-top:18px;padding:16px;border:2px dashed #bb9e56;border-radius:15px;background:#fff3cc
+    }
+    .mission h3{margin:0 0 3px;font-size:16px}
+    .mission p{margin:0 0 12px;color:#625773;font-size:13px}
+    .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .choice{
+      padding:10px 12px;border:2px solid #d6c68e;border-radius:11px;background:#fffdf6;
+      color:var(--ink);font:700 13px var(--display);text-align:left;cursor:pointer
+    }
+    .choice:hover:not(:disabled){border-color:var(--line);background:#fff}
+    .choice:disabled{cursor:default}
+    .choice.correct{border-color:#318263;background:#d9f4e7}
+    .choice.incorrect{border-color:#b65b54;background:#ffe1dc}
+    .feedback{min-height:22px;margin-top:10px;color:#625773;font-size:13px;font-weight:700}
+    .feedback.success{color:#276b52}
+    .feedback.error{color:#a63d38}
+    .lesson-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}
+    .sandbox-link,.next-button{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 13px;
+      border:2px solid var(--line);border-radius:11px;background:var(--green);
+      color:var(--ink);font:800 13px var(--display);text-decoration:none;cursor:pointer;
+      box-shadow:0 3px 0 var(--line)
+    }
+    .next-button{background:var(--purple)}
+    .next-button:disabled{opacity:.48;cursor:not-allowed}
+    .next-button:not(:disabled):active,.sandbox-link:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+    .storage-note{min-height:18px;margin:9px 2px 0;color:#a63d38;font-size:12px}
+    @media(max-width:760px){
+      .topbar{flex-wrap:wrap;gap:10px;padding:10px 14px}
+      .page-nav{width:100%;order:2;justify-content:center}
+      main{margin-top:18px}
+      .hero{align-items:flex-start;flex-direction:column;padding:20px}
+      .layout{grid-template-columns:1fr}
+      .level-panel{order:2}
+      .level-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .lesson-panel{min-height:0;padding:19px}
+    }
+    @media(max-width:430px){
+      .stats{width:100%}.stat{flex:1;min-width:0}
+      .level-list,.choices{grid-template-columns:1fr}
+      .lesson-actions{align-items:stretch;flex-direction:column}
+      .sandbox-link,.next-button{width:100%}
+    }
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="PyBlocks home">
+      <span class="logo">&gt;_</span>
+      <span>PyBlocks<small>snap blocks, learn python</small></span>
+    </a>
+    <nav class="page-nav" aria-label="Main navigation">
+      <a href="./">Sandbox</a>
+      <a href="learn.html" aria-current="page">Learn Python</a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="pageTitle">
+      <div>
+        <div class="eyebrow">Python Basics · your adventure starts here</div>
+        <h1 id="pageTitle">Choose your next level ✨</h1>
+        <p>Learn one small idea at a time. Pass each mission to unlock the next chapter.</p>
+      </div>
+      <div class="stats" aria-label="Your learning stats">
+        <div class="stat"><strong id="xpCount">0</strong><span>⭐ XP</span></div>
+        <div class="stat"><strong id="completedCount">0/8</strong><span>🏅 levels</span></div>
+      </div>
+    </section>
+    <section class="progress-card" aria-label="Course progress">
+      <div class="progress-label"><span>Adventure progress</span><span id="progressText">0% complete</span></div>
+      <div class="progress-track" role="progressbar" aria-label="Course completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </section>
+    <div class="layout">
+      <aside class="level-panel" aria-label="Python chapters">
+        <h2 class="panel-title">🗺️ Chapter map</h2>
+        <nav class="level-list" id="levelList" aria-label="Choose a chapter"></nav>
+      </aside>
+      <section class="lesson-panel" aria-live="polite">
+        <div class="lesson-top">
+          <div class="chapter-icon" id="chapterIcon" aria-hidden="true"></div>
+          <div>
+            <div class="chapter-kicker" id="chapterKicker"></div>
+            <h2 id="chapterTitle"></h2>
+          </div>
+        </div>
+        <p class="lesson-description" id="chapterDescription"></p>
+        <div class="code-card">
+          <div class="code-label">🐍 Try reading this Python</div>
+          <pre><code id="chapterCode"></code></pre>
+        </div>
+        <div class="mission">
+          <h3 id="missionTitle">🎯 Level mission</h3>
+          <p id="missionQuestion"></p>
+          <div class="choices" id="choices"></div>
+          <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        </div>
+        <div class="lesson-actions">
+          <a class="sandbox-link" href="./">🧪 Practice in the sandbox</a>
+          <button class="next-button" id="nextButton" type="button" disabled>Next level →</button>
+        </div>
+        <p class="storage-note" id="storageNote" role="status"></p>
+      </section>
+    </div>
+  </main>
+  <script>
+    const LEVELS = [
+      {
+        title:'Say hello',icon:'👋',description:'Programs can show messages with print(). Put the message in quotes to make it text (a string).',
+        code:'print("Hello, Python!")',question:'Which line prints the words Hello?',choices:['print("Hello")','say("Hello")','show "Hello"','echo("Hello")'],answer:0,
+        success:'Great start! print() sends a message to the screen.',badge:'First words'
+      },
+      {
+        title:'Meet variables',icon:'📦',description:'A variable is a name for a value. Use = to store a value, then use the name to get it back.',
+        code:'pet = "Mochi"\\nprint(pet)',question:'What does pet contain after this assignment?',choices:['The word pet','"Mochi"','Nothing','The print function'],answer:1,
+        success:'You stored and reused a value. That is a variable!',badge:'Value keeper'
+      },
+      {
+        title:'Types of things',icon:'🧩',description:'Python values have types: strings for text, integers for whole numbers, floats for decimals, and Booleans for True or False.',
+        code:'name = "Ada"    # str\\nage = 12         # int\\nheight = 1.5     # float\\nready = True     # bool',question:'Which value is an integer?',choices:['"12"','12','12.0','True'],answer:1,
+        success:'Exactly! 12 is an int. Quotes make "12" text, while 12.0 is a float.',badge:'Type explorer'
+      },
+      {
+        title:'Ask a question',icon:'💬',description:'input() pauses to collect what someone types. Its result is text, so save it in a variable to use later.',
+        code:'name = input("Your name? ")\\nprint("Hi, " + name)',question:'What type of value does input() return?',choices:['Always an integer','A list','Text (a string)','A Boolean'],answer:2,
+        success:'Right! input() returns a string, even when someone types digits.',badge:'Conversation starter'
+      },
+      {
+        title:'Do the math',icon:'🧮',description:'Python uses +, -, *, and / for arithmetic. Use int() to turn number-text into a whole number before calculating.',
+        code:'apples = 8\\nfriends = 2\\nprint(apples / friends)  # 4.0',question:'What is 8 % 3? The % operator gives the remainder.',choices:['2','2.67','3','0'],answer:0,
+        success:'Nice! % gives the remainder after division: 8 divided by 3 leaves 2.',badge:'Number wizard'
+      },
+      {
+        title:'Make a decision',icon:'🚦',description:'An if statement runs code only when its condition is True. Indent the lines that belong inside it.',
+        code:'score = 7\\nif score >= 5:\\n    print("Level up!")',question:'Will the message print when score is 7?',choices:['Yes, because 7 is at least 5','No, if always skips','Only if score is 5','The code is missing a loop'],answer:0,
+        success:'Correct! 7 >= 5 is True, so the indented print runs.',badge:'Path chooser'
+      },
+      {
+        title:'Repeat with loops',icon:'🔁',description:'A for loop repeats its indented body for each item in a sequence. range(3) counts 0, 1, and 2.',
+        code:'for number in range(3):\\n    print(number)',question:'How many times does this loop print?',choices:['2','3','4','Forever'],answer:1,
+        success:'That is 3 repetitions. range(3) starts at 0 and stops before 3.',badge:'Loop legend'
+      },
+      {
+        title:'Keep a list',icon:'🎒',description:'Lists keep several values in order. Indexing starts at 0, so snacks[0] is the first item.',
+        code:'snacks = ["pear", "mango", "toast"]\\nprint(snacks[0])  # pear',question:'What does snacks[1] give you?',choices:['"pear"','"mango"','"toast"','The whole list'],answer:1,
+        success:'You did it! List index 1 is the second item. You unlocked Python basics!',badge:'Python explorer'
+      }
+    ];
+    const STORAGE_KEY = 'pyblocks-learning-progress-v1';
+    let completed = new Set();
+    let activeLevel = 0;
+    let answeredCorrectly = false;
+
+    function loadProgress(){
+      try{
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if(!saved) return;
+        const data = JSON.parse(saved);
+        if(!Array.isArray(data.completed) || data.completed.some(index => !Number.isInteger(index) || index < 0 || index >= LEVELS.length)){
+          throw new Error('Saved course progress has an invalid format.');
+        }
+        completed = new Set(data.completed);
+      }catch(error){
+        console.warn('Could not load PyBlocks learning progress:', error);
+        document.getElementById('storageNote').textContent = 'Progress could not be loaded from this browser. You can still play this session.';
+      }
+    }
+    function saveProgress(){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({completed:[...completed]}));
+      }catch(error){
+        console.error('Could not save PyBlocks learning progress:', error);
+        document.getElementById('storageNote').textContent = 'Progress could not be saved in this browser. Keep this page open to continue.';
+      }
+    }
+    function isUnlocked(index){
+      return index === 0 || completed.has(index - 1);
+    }
+    function updateProgress(){
+      const count = completed.size;
+      const percentage = Math.round(count / LEVELS.length * 100);
+      document.getElementById('xpCount').textContent = String(count * 100);
+      document.getElementById('completedCount').textContent = `${count}/${LEVELS.length}`;
+      document.getElementById('progressText').textContent = `${percentage}% complete`;
+      const track = document.querySelector('.progress-track');
+      track.setAttribute('aria-valuenow', String(percentage));
+      document.getElementById('progressFill').style.width = `${percentage}%`;
+    }
+    function renderLevelList(){
+      const list = document.getElementById('levelList');
+      list.replaceChildren();
+      LEVELS.forEach((level,index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'level-button';
+        button.disabled = !isUnlocked(index);
+        button.setAttribute('aria-label',`Level ${index + 1}: ${level.title}${completed.has(index) ? ', completed' : isUnlocked(index) ? '' : ', locked'}`);
+        if(index === activeLevel) button.setAttribute('aria-current','step');
+        const icon = document.createElement('span');
+        icon.className = 'level-icon';
+        icon.textContent = completed.has(index) ? '⭐' : isUnlocked(index) ? level.icon : '🔒';
+        const title = document.createElement('span');
+        title.className = 'level-name';
+        title.textContent = `${index + 1}. ${level.title}`;
+        const state = document.createElement('span');
+        state.className = 'level-state';
+        state.textContent = completed.has(index) ? 'DONE' : isUnlocked(index) ? '+100 XP' : 'LOCKED';
+        button.append(icon,title,state);
+        button.addEventListener('click',() => {
+          activeLevel = index;
+          answeredCorrectly = false;
+          render();
+        });
+        list.append(button);
+      });
+    }
+    function render(){
+      const level = LEVELS[activeLevel];
+      document.getElementById('chapterIcon').textContent = level.icon;
+      document.getElementById('chapterKicker').textContent = `Level ${activeLevel + 1} · ${level.badge}`;
+      document.getElementById('chapterTitle').textContent = level.title;
+      document.getElementById('chapterDescription').textContent = level.description;
+      document.getElementById('chapterCode').textContent = level.code;
+      document.getElementById('missionQuestion').textContent = level.question;
+      document.getElementById('missionTitle').textContent = completed.has(activeLevel) ? `🏅 Badge earned: ${level.badge}` : '🎯 Level mission · choose the right answer';
+      const choices = document.getElementById('choices');
+      choices.replaceChildren();
+      level.choices.forEach((choice,index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'choice';
+        button.textContent = choice;
+        if(answeredCorrectly){
+          button.disabled = true;
+          if(index === level.answer) button.classList.add('correct');
+        }
+        button.addEventListener('click',() => checkAnswer(index));
+        choices.append(button);
+      });
+      const feedback = document.getElementById('feedback');
+      feedback.className = 'feedback';
+      if(answeredCorrectly || completed.has(activeLevel)){
+        feedback.textContent = completed.has(activeLevel) ? `+100 XP · ${level.success}` : level.success;
+        feedback.classList.add('success');
+      }else{
+        feedback.textContent = '';
+      }
+      const next = document.getElementById('nextButton');
+      next.disabled = !(answeredCorrectly || completed.has(activeLevel)) || activeLevel === LEVELS.length - 1;
+      next.textContent = activeLevel === LEVELS.length - 1 ? '🏆 Course complete!' : 'Next level →';
+      renderLevelList();
+      updateProgress();
+    }
+    function checkAnswer(index){
+      const level = LEVELS[activeLevel];
+      const feedback = document.getElementById('feedback');
+      if(index !== level.answer){
+        feedback.textContent = 'Not quite — take another look at the example and try again.';
+        feedback.className = 'feedback error';
+        const buttons = document.querySelectorAll('.choice');
+        buttons[index].classList.add('incorrect');
+        return;
+      }
+      answeredCorrectly = true;
+      if(!completed.has(activeLevel)){
+        completed.add(activeLevel);
+        saveProgress();
+      }
+      render();
+    }
+    document.getElementById('nextButton').addEventListener('click',() => {
+      if(activeLevel < LEVELS.length - 1 && completed.has(activeLevel)){
+        activeLevel += 1;
+        answeredCorrectly = false;
+        render();
+      }
+    });
+    loadProgress();
+    activeLevel = Math.min(completed.size,LEVELS.length - 1);
+    while(activeLevel > 0 && !isUnlocked(activeLevel)) activeLevel -= 1;
+    if(completed.size === LEVELS.length) activeLevel = LEVELS.length - 1;
+    render();
+  </script>
+</body>
+</html>

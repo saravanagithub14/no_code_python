@@ -1,11 +1,14 @@
 # PyBlocks
 
-PyBlocks is a browser-based visual playground for learning Python. Arrange
-blocks to build a program, then run it to see the generated Python and output.
+PyBlocks is a browser-based Python learning app with two pages: a visual coding
+sandbox and a chapter-based learning path. Arrange blocks in the sandbox to
+build a program, then run it to see the generated Python and output. Complete
+chapter missions to earn XP, unlock levels, and save progress in your browser.
 
 ## Project structure
 
-- `site/index.html` — the complete static app (HTML, CSS, and JavaScript)
+- `site/index.html` — the visual coding sandbox and default page
+- `site/learn.html` — the gamified, chapter-by-chapter Python learning path
 - `index.html` — redirects root-based Pages deployments to the app
 - `.github/workflows/deploy-pages.yml` — publishes the app to GitHub Pages
 
