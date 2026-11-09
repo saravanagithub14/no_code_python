@@ -5,6 +5,18 @@ sandbox and a chapter-based learning path. Arrange blocks in the sandbox to
 build a program, then run it to see the generated Python and output. Complete
 chapter missions to earn XP, unlock levels, and save progress in your browser.
 
+> **Learn Python is currently locked ("Coming soon").** The Sandbox nav shows it
+> as disabled and `learn.html` shows a locked screen; the lessons are still in
+> the page, just hidden. To unlock, remove `class="learn-locked"` from `<body>`
+> in `site/learn.html` and restore the nav link in `site/index.html` (the exact
+> markup is in the comment there).
+
+## On phones and tablets
+
+The sandbox stacks into one column with Example / Clear / Run in a bottom bar.
+Tap a palette block to add it, swipe the palette to see more, drag a palette
+block into the canvas to place it, and press and hold a canvas block to move it.
+
 ## Project structure
 
 ```
@@ -14,6 +26,7 @@ site/                    the deployed app (no build step)
   css/sandbox.css        styles for the sandbox
   css/learn.css          styles for the learning path
   js/sandbox.js          block editor, Python ↔ block sync and runner
+  js/python-check.js     Python-style syntax errors with suggested fixes
   js/learn.js            lessons, missions, XP and progress tracking
 docs/DESIGN.md           UI/UX redesign brief
 index.html               redirects root-based Pages deployments to the app

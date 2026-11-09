@@ -8,6 +8,7 @@ let idCounter = 1;
 function newId(){ return 'b' + (idCounter++); }
 
 let program = []; // array of top-level block objects
+let codeEdited = false; // true when the code editor has changes not yet applied to blocks
 
 const BLOCK_META = {
   print:      { cls:'c-output', container:false },
@@ -114,7 +115,6 @@ function renderBlock(block, parentArray, indexInParent){
   const meta = BLOCK_META[block.type];
   const wrap = document.createElement('div');
   wrap.className = 'block ' + meta.cls;
-  wrap.style.touchAction = 'none';
   wrap.dataset.id = block.id;
 
   const body = document.createElement('div');
@@ -208,8 +208,8 @@ function renderBlock(block, parentArray, indexInParent){
     wrap.appendChild(renderContainer(block, 'children2'));
   }
 
-  // drag start (pointer-based, works for mouse + touch + pen)
-  wrap.addEventListener('pointerdown', (e) => startDrag(e, wrap, { existingBlockId: block.id }));
+  // drag start (pointer-based; touch uses press-and-hold, see TOUCH GESTURES)
+  wrap.addEventListener('pointerdown', (e) => beginPointer(e, wrap, { existingBlockId: block.id }));
 
   return wrap;
 }
@@ -279,8 +279,11 @@ function startDrag(e, sourceEl, opts){
     paletteType: opts.paletteType || null,
     offsetX: e.clientX - rect.left,
     offsetY: e.clientY - rect.top,
+    lastX: e.clientX,
+    lastY: e.clientY,
     lastZone: null,
   };
+  if(!autoScrollFrame) autoScrollFrame = requestAnimationFrame(autoScrollTick);
 
   if(opts.existingBlockId){
     sourceEl.classList.add('dragging');
@@ -307,9 +310,14 @@ function positionGhost(x, y){
 
 function onDragMove(e){
   if(!activeDrag || e.pointerId !== activeDrag.pointerId) return;
+  activeDrag.lastX = e.clientX;
+  activeDrag.lastY = e.clientY;
   positionGhost(e.clientX, e.clientY);
+  updateDragZone(e.clientX, e.clientY);
+}
 
-  const zone = findNearestZone(e.clientX, e.clientY);
+function updateDragZone(x, y){
+  const zone = findNearestZone(x, y);
   if(zone !== activeDrag.lastZone){
     clearDropIndicators();
     if(zone){
@@ -365,15 +373,159 @@ function onDragEnd(e){
   document.querySelectorAll('.block.dragging').forEach(el => el.classList.remove('dragging'));
   activeDrag = null;
 
-  if(zone){
+  // A cancelled pointer (e.g. the browser took over the gesture) never drops.
+  if(zone && e.type !== 'pointercancel'){
     handleDrop(zone.__targetArray, zone.__index, { existingBlockId, paletteType });
   }
 }
 
 // palette blocks: start a "copy" drag that creates a new block on drop
 document.querySelectorAll('.palette-block').forEach(el => {
-  el.addEventListener('pointerdown', (e) => startDrag(e, el, { paletteType: el.dataset.type }));
+  el.addEventListener('pointerdown', (e) => beginPointer(e, el, { paletteType: el.dataset.type }));
 });
+
+/* ======================================================================
+   TOUCH GESTURES
+   Mouse and pen drag immediately, as before. On touch screens:
+   - palette block: tap adds it to the end of the program; moving across
+     the palette's scroll direction starts a drag; moving along it scrolls.
+   - canvas block: press and hold to pick it up, so a swipe scrolls the page.
+   While dragging, the page auto-scrolls near the top/bottom edge.
+====================================================================== */
+const TOUCH_SLOP = 10;       // px a finger may wander before it counts as a move
+const LONG_PRESS_MS = 320;
+let pendingTouch = null;
+let autoScrollFrame = null;
+
+function beginPointer(e, el, opts){
+  // Nested blocks sit inside their parent's element: only the innermost one,
+  // which sees the event first, should react.
+  if(e.blockDragHandled) return;
+  e.blockDragHandled = true;
+  if(e.pointerType !== 'touch'){ startDrag(e, el, opts); return; }
+  if(e.target.closest('input, select, .del')) return;
+  cancelPendingTouch();
+  pendingTouch = {
+    el, opts, target: e.target, pointerId: e.pointerId,
+    startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, timer: null
+  };
+  if(opts.existingBlockId){
+    el.classList.add('press-hold');
+    pendingTouch.timer = setTimeout(startPendingDrag, LONG_PRESS_MS);
+  }
+  window.addEventListener('pointermove', onPendingMove);
+  window.addEventListener('pointerup', onPendingUp);
+  window.addEventListener('pointercancel', cancelPendingTouch);
+}
+
+function cancelPendingTouch(){
+  if(!pendingTouch) return;
+  clearTimeout(pendingTouch.timer);
+  pendingTouch.el.classList.remove('press-hold');
+  pendingTouch = null;
+  window.removeEventListener('pointermove', onPendingMove);
+  window.removeEventListener('pointerup', onPendingUp);
+  window.removeEventListener('pointercancel', cancelPendingTouch);
+}
+
+function startPendingDrag(){
+  const p = pendingTouch;
+  if(!p) return;
+  cancelPendingTouch();
+  if(navigator.vibrate) navigator.vibrate(12);
+  startDrag({target: p.target, pointerId: p.pointerId, clientX: p.x, clientY: p.y, preventDefault(){}}, p.el, p.opts);
+}
+
+function onPendingMove(e){
+  const p = pendingTouch;
+  if(!p || e.pointerId !== p.pointerId) return;
+  p.x = e.clientX;
+  p.y = e.clientY;
+  const dx = e.clientX - p.startX;
+  const dy = e.clientY - p.startY;
+  if(Math.hypot(dx, dy) < TOUCH_SLOP) return;
+  if(p.opts.paletteType){
+    // On phones the palette scrolls sideways, so a vertical move is a drag;
+    // on wider screens it scrolls up/down, so a sideways move is a drag.
+    const paletteScrollsSideways = matchMedia('(max-width: 820px)').matches;
+    const isDrag = paletteScrollsSideways ? Math.abs(dy) > Math.abs(dx) : Math.abs(dx) > Math.abs(dy);
+    if(isDrag){
+      startPendingDrag();
+      onDragMove(e);
+      return;
+    }
+  }
+  cancelPendingTouch(); // it's a scroll, not a drag
+}
+
+function onPendingUp(e){
+  const p = pendingTouch;
+  if(!p || e.pointerId !== p.pointerId) return;
+  cancelPendingTouch();
+  if(p.opts.paletteType) addBlockByTap(p.opts.paletteType, p.el);
+}
+
+function addBlockByTap(type, paletteEl){
+  const block = makeBlock(type);
+  program.push(block);
+  renderProgram();
+  const added = scriptStackEl.querySelector(`.block[data-id="${block.id}"]`);
+  if(added){
+    added.classList.add('just-added');
+    setTimeout(() => added.classList.remove('just-added'), 900);
+  }
+  showToast(`Added “${paletteEl.textContent.replace(/\s+/g, ' ').trim()}” — hold a block to move it`);
+}
+
+let toastTimer = null;
+function showToast(message){
+  let toast = document.getElementById('toast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// Keep the page still while a block is being dragged with a finger.
+document.addEventListener('touchmove', e => { if(activeDrag) e.preventDefault(); }, {passive: false});
+// Long-press shouldn't open a context menu on blocks.
+document.addEventListener('contextmenu', e => {
+  if(e.target.closest('.block, .palette-block') && !e.target.closest('input, select')) e.preventDefault();
+});
+
+function bottomBarHeight(){
+  const bar = document.querySelector('.topbar-actions');
+  return bar && getComputedStyle(bar).position === 'fixed' ? bar.offsetHeight : 0;
+}
+
+function autoScrollTick(){
+  if(!activeDrag){ autoScrollFrame = null; return; }
+  const edge = 70;
+  const y = activeDrag.lastY;
+  const bottom = window.innerHeight - bottomBarHeight();
+  let step = 0;
+  if(y < edge) step = -Math.min(16, Math.ceil((edge - y) / 4));
+  else if(y > bottom - edge) step = Math.min(16, Math.ceil((y - (bottom - edge)) / 4));
+  if(step){
+    const before = window.scrollY;
+    window.scrollBy(0, step);
+    if(window.scrollY !== before) updateDragZone(activeDrag.lastX, y);
+  }
+  autoScrollFrame = requestAnimationFrame(autoScrollTick);
+}
+
+/* On phones the console sits below the code, so bring it into view. */
+function revealConsole(){
+  if(!matchMedia('(max-width: 820px)').matches) return;
+  document.querySelector('.console').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
 
 function handleDrop(targetArray, index, opts){
   if(opts.paletteType){
@@ -513,6 +665,7 @@ function renderCode(){
   const codeEditor = document.getElementById('codeEditor');
   codeEditor.value = lines.join('\n');
   window.__lastPython = lines.join('\n');
+  codeEdited = false;
   setCodeStatus('Code and blocks are in sync');
 }
 
@@ -597,10 +750,14 @@ function parsePythonBlocks(source){
   const rawLines = source.replace(/\r\n?/g, '\n').split('\n');
   if(rawLines.every(line => !line.trim() || line.trim() === '# Drag blocks from the left to build your program!')) return [];
 
+  // Catch syntax mistakes first, with a Python-style message and suggested fix.
+  const problem = findPythonProblem(source);
+  if(problem) throw problem;
+
   const lines = [];
   rawLines.forEach((raw, index) => {
     if(!raw.trim()) return;
-    if(raw.includes('\t')) throw new Error(`Line ${index+1}: use spaces for indentation.`);
+    if(/^[ \t]*\t/.test(raw)) throw new Error(`Line ${index+1}: use spaces for indentation.`);
     const indent = raw.length - raw.trimStart().length;
     if(indent % 4 !== 0) throw new Error(`Line ${index+1}: indentation must use groups of 4 spaces.`);
     const text = raw.trim();
@@ -684,7 +841,7 @@ function parsePythonBlocks(source){
         continue;
       }
 
-      match = line.text.match(/^([A-Za-z_]\w*) = (.+)$/);
+      match = line.text.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/);
       if(match){
         cursor++;
         const [, name, value] = match;
@@ -720,7 +877,7 @@ function parsePythonBlocks(source){
         continue;
       }
 
-      throw new Error(`Line ${line.lineNumber}: this Python statement is not supported by the block editor.`);
+      throw new Error(`Line ${line.lineNumber}: this line can't be turned into a block yet.`);
     }
     return blocks;
   }
@@ -739,13 +896,132 @@ function makeParsedBlock(type, fields){
 }
 
 function applyPythonToBlocks(){
+  const source = document.getElementById('codeEditor').value;
   try{
-    program = parsePythonBlocks(document.getElementById('codeEditor').value);
+    program = parsePythonBlocks(source);
     renderProgram();
     setCodeStatus('Blocks updated from code');
+    return true;
   } catch(error){
-    setCodeStatus(error.message, true);
+    showCodeError(error, source);
+    return false;
   }
+}
+
+/* ======================================================================
+   CODE ERRORS — Python-style report in the console, with a suggested fix
+====================================================================== */
+
+function toCodeError(error, source){
+  if(error instanceof PyCodeError) return error;
+  const match = /^Line (\d+): (.*)$/.exec(error.message);
+  const line = match ? Number(match[1]) : 1;
+  const lineText = source.replace(/\r\n?/g, '\n').split('\n')[line - 1] || '';
+  return new PyCodeError({
+    type: 'Unsupported',
+    line,
+    column: lineText.length - lineText.trimStart().length,
+    message: match ? match[2] : error.message,
+    hint: unsupportedHint(lineText.trim())
+  });
+}
+
+function showCodeError(error, source){
+  const err = toCodeError(error, source);
+  const lineText = source.replace(/\r\n?/g, '\n').split('\n')[err.line - 1] || '';
+  const indent = lineText.length - lineText.trimStart().length;
+  const caret = Math.max(0, Math.min(err.column - indent, lineText.trim().length));
+  const isUnsupported = err.pyType === 'Unsupported';
+
+  const card = document.createElement('div');
+  card.className = 'py-error';
+
+  const trace = document.createElement('pre');
+  trace.className = 'py-error-trace';
+  trace.textContent = `  File "program.py", line ${err.line}\n    ${lineText.trim()}\n    `;
+  const caretMark = document.createElement('span');
+  caretMark.className = 'py-error-caret';
+  caretMark.textContent = ' '.repeat(caret) + '^';
+  trace.appendChild(caretMark);
+  card.appendChild(trace);
+
+  const title = document.createElement('div');
+  title.className = 'py-error-title';
+  const type = document.createElement('span');
+  type.className = 'py-error-type';
+  type.textContent = isUnsupported ? 'Not supported in blocks' : err.pyType;
+  title.append(type, ': ' + err.pyMessage);
+  card.appendChild(title);
+
+  if(err.hint){
+    const hint = document.createElement('div');
+    hint.className = 'py-error-hint';
+    const label = document.createElement('span');
+    label.className = 'py-error-label';
+    label.textContent = 'Suggestion';
+    hint.appendChild(label);
+    // `backticked` parts of a hint are code
+    err.hint.split('`').forEach((part, i) => {
+      if(!part) return;
+      if(i % 2){
+        const code = document.createElement('code');
+        code.textContent = part;
+        hint.appendChild(code);
+      } else {
+        hint.append(part);
+      }
+    });
+    card.appendChild(hint);
+  }
+
+  if(err.fix){
+    const fixRow = document.createElement('div');
+    fixRow.className = 'py-error-fix';
+    const label = document.createElement('span');
+    label.className = 'py-error-label';
+    label.textContent = 'Try';
+    const code = document.createElement('code');
+    code.textContent = err.fix.lines.join('\n');
+    const applyBtn = document.createElement('button');
+    applyBtn.type = 'button';
+    applyBtn.className = 'code-apply';
+    applyBtn.textContent = 'Apply fix';
+    applyBtn.addEventListener('click', () => {
+      const codeEditor = document.getElementById('codeEditor');
+      if(codeEditor.value !== source){
+        setCodeStatus('Code changed since this error — click Apply to check again', true);
+        applyBtn.disabled = true;
+        return;
+      }
+      codeEditor.value = applyCodeFix(source, err.fix);
+      if(applyPythonToBlocks()){
+        document.getElementById('consoleBody').innerHTML =
+          '<span class="hint">Fixed! Click ▶ Run to try your program.</span>';
+      }
+    });
+    fixRow.append(label, code, applyBtn);
+    card.appendChild(fixRow);
+  }
+
+  const consoleBody = document.getElementById('consoleBody');
+  consoleBody.innerHTML = '';
+  consoleBody.appendChild(card);
+  consoleBody.scrollTop = 0;
+  revealConsole();
+  setCodeStatus(`${isUnsupported ? 'Unsupported code' : err.pyType} on line ${err.line} — see console`, true);
+  highlightEditorLine(err.line);
+}
+
+function highlightEditorLine(lineNumber){
+  const codeEditor = document.getElementById('codeEditor');
+  const lines = codeEditor.value.split('\n');
+  const start = lines.slice(0, lineNumber - 1).reduce((sum, line) => sum + line.length + 1, 0);
+  const end = start + (lines[lineNumber - 1] || '').length;
+  // On touch screens, focusing would pop up the keyboard over the error.
+  if(!matchMedia('(pointer: coarse)').matches) codeEditor.focus({preventScroll: true});
+  codeEditor.setSelectionRange(start, end);
+  const lineHeight = parseFloat(getComputedStyle(codeEditor).lineHeight) || 20;
+  codeEditor.scrollTop = Math.max(0, (lineNumber - 3) * lineHeight);
 }
 
 /* ======================================================================
@@ -755,6 +1031,9 @@ function applyPythonToBlocks(){
 ====================================================================== */
 
 function runProgram(){
+  // Typed code that hasn't been applied yet is checked first, so mistakes
+  // are reported instead of silently running the old blocks.
+  if(codeEdited && !applyPythonToBlocks()) return;
   const consoleBody = document.getElementById('consoleBody');
   consoleBody.innerHTML = '';
   const out = [];
@@ -938,9 +1217,13 @@ function runProgram(){
 /* ======================================================================
    TOP BAR ACTIONS
 ====================================================================== */
-document.getElementById('runBtn').addEventListener('click', runProgram);
+document.getElementById('runBtn').addEventListener('click', () => {
+  runProgram();
+  revealConsole();
+});
 document.getElementById('applyCodeBtn').addEventListener('click', applyPythonToBlocks);
 document.getElementById('codeEditor').addEventListener('input', () => {
+  codeEdited = true;
   setCodeStatus('Code edited — apply to update blocks');
 });
 document.getElementById('codeEditor').addEventListener('keydown', e => {
@@ -996,7 +1279,8 @@ if(practiceCode !== null){
     program = [];
     renderProgram();
     codeEditor.value = practiceCode;
-    setCodeStatus(`Could not load lesson example: ${error.message}`, true);
+    codeEdited = true;
+    showCodeError(error, practiceCode);
   }
 } else {
   renderProgram();

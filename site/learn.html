@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/learn.css">
 </head>
-<body>
+<body class="learn-locked"><!-- remove class="learn-locked" to unlock the lessons -->
   <header class="topbar">
     <a class="brand" href="./" aria-label="PyBlocks home">
       <span class="logo">&gt;_</span>
@@ -21,6 +21,17 @@
       <a href="learn.html" aria-current="page">Learn Python</a>
     </nav>
   </header>
+  <section class="locked-screen" aria-labelledby="lockedTitle">
+    <div class="locked-card">
+      <div class="locked-icon" aria-hidden="true">
+        <svg class="lock-icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </div>
+      <div class="eyebrow">Learn Python</div>
+      <h1 id="lockedTitle">Coming soon</h1>
+      <p>Guided Python lessons are being polished. Meanwhile, build and run programs with blocks in the Sandbox.</p>
+      <a class="locked-cta" href="./">Go to the Sandbox →</a>
+    </div>
+  </section>
   <main>
     <section class="hero" aria-labelledby="pageTitle">
       <div>
