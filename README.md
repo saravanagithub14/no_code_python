@@ -7,10 +7,18 @@ chapter missions to earn XP, unlock levels, and save progress in your browser.
 
 ## Project structure
 
-- `site/index.html` — the visual coding sandbox and default page
-- `site/learn.html` — the gamified, chapter-by-chapter Python learning path
-- `index.html` — redirects root-based Pages deployments to the app
-- `.github/workflows/deploy-pages.yml` — publishes the app to GitHub Pages
+```
+site/                    the deployed app (no build step)
+  index.html             visual coding sandbox (default page)
+  learn.html             gamified, chapter-by-chapter learning path
+  css/sandbox.css        styles for the sandbox
+  css/learn.css          styles for the learning path
+  js/sandbox.js          block editor, Python ↔ block sync and runner
+  js/learn.js            lessons, missions, XP and progress tracking
+docs/DESIGN.md           UI/UX redesign brief
+index.html               redirects root-based Pages deployments to the app
+.github/workflows/       GitHub Pages deployment workflow
+```
 
 There is no build step or package installation required.
 
